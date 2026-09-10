@@ -16,3 +16,4 @@ ml/heatmaps/
 
 # Environment / local files
 .env
+!.env.example
