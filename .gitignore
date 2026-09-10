@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# ML datasets and generated data
+ml/raw_data/
+ml/data/
+
+# ML outputs
+ml/checkpoints/
+ml/runs/
+ml/outputs/
+ml/heatmaps/
+
+# Environment / local files
+.env
