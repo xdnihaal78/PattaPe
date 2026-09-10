@@ -141,6 +141,7 @@ def generate_gradcam(
     model: Optional[torch.nn.Module] = None,
     class_names: Optional[List[str]] = None,
     target_class_index: Optional[int] = None,
+    predicted_confidence: Optional[float] = None,
     checkpoint_path: Union[str, Path] = DEFAULT_CHECKPOINT_PATH,
     classes_path: Optional[Union[str, Path]] = DEFAULT_CLASSES_PATH,
     device: Optional[torch.device] = None,
@@ -150,14 +151,26 @@ def generate_gradcam(
     Generate Grad-CAM heatmap visualization and compute affected leaf percentage.
 
     Args:
-        image_input: File path (str/Path) or PIL Image instance.
-        model: Optional pre-loaded model.
-        class_names: Optional list of class names.
-        target_class_index: Optional specific class index to explain. If None, uses top predicted class.
-        checkpoint_path: Path to model checkpoint.
-        classes_path: Path to class mapping JSON.
-        device: Torch device (CUDA/CPU).
-        threshold: Grad-CAM lesion activation threshold (default: 0.5).
+        image_input:          File path (str/Path) or PIL Image instance.
+        model:                Optional pre-loaded model.
+        class_names:          Optional list of class names.
+        target_class_index:   Optional specific class index to explain (original 36-class
+                              EfficientNet index). When supplied, the internal inference
+                              forward pass is skipped and this index is used directly as
+                              the Grad-CAM target — enabling crop-aware callers to pass in
+                              the exact index from predict_image() without a second,
+                              unconstrained inference. If None, performs a full forward pass
+                              and targets the top predicted class.
+        predicted_confidence: Optional confidence value (0.0–1.0) to embed in the returned
+                              dict. Useful when target_class_index comes from a crop-aware
+                              predict_image() call so the displayed confidence reflects the
+                              filtered softmax rather than the unrestricted one. Ignored when
+                              target_class_index is None (confidence is derived from the
+                              internal forward pass in that case).
+        checkpoint_path:      Path to model checkpoint.
+        classes_path:         Path to class mapping JSON.
+        device:               Torch device (CUDA/CPU).
+        threshold:            Grad-CAM lesion activation threshold (default: 0.5).
 
     Returns:
         Dictionary containing prediction, Grad-CAM arrays, and metrics:
@@ -207,17 +220,30 @@ def generate_gradcam(
     img_np = np.array(image_resized, dtype=np.uint8)
     img_float = img_np.astype(np.float32) / 255.0
 
-    # Model inference for top prediction
-    with torch.no_grad():
-        outputs = model(tensor)
-        probabilities = F.softmax(outputs, dim=1).squeeze(0)
-
     if target_class_index is None:
+        # Backward-compatible path: run a full unrestricted forward pass and pick
+        # the top predicted class as the Grad-CAM target.
+        with torch.no_grad():
+            outputs = model(tensor)
+            probabilities = F.softmax(outputs, dim=1).squeeze(0)
         pred_idx = int(torch.argmax(probabilities).item())
+        confidence = float(probabilities[pred_idx].item())
     else:
+        # Caller-supplied target path: use the provided index directly.
+        # This is the crop-aware path — no second forward pass is performed so the
+        # Grad-CAM target is EXACTLY the class chosen by crop-filtered predict_image().
         pred_idx = target_class_index
+        if predicted_confidence is not None:
+            # Use the crop-filtered confidence supplied by the caller.
+            confidence = float(predicted_confidence)
+        else:
+            # Fall back to reading confidence from an unrestricted forward pass
+            # (preserves backward compatibility for callers that don't supply confidence).
+            with torch.no_grad():
+                outputs = model(tensor)
+                probabilities = F.softmax(outputs, dim=1).squeeze(0)
+            confidence = float(probabilities[pred_idx].item())
 
-    confidence = float(probabilities[pred_idx].item())
     predicted_class = class_names[pred_idx]
     crop, disease = parse_class_name(predicted_class)
 

@@ -27,6 +27,10 @@ IMAGE_SIZE = 224
 IMAGENET_MEAN = [0.485, 0.456, 0.406]
 IMAGENET_STD = [0.229, 0.224, 0.225]
 
+# Supported crop names for crop-aware inference.
+# These must match the crop prefix in every class name (left side of __).
+VALID_CROPS: List[str] = ["rice", "banana", "chilli", "groundnut", "sugarcane"]
+
 
 def get_device() -> torch.device:
     """Automatically use CUDA when available, otherwise CPU."""
@@ -64,6 +68,37 @@ def parse_class_name(class_name: str) -> Tuple[str, str]:
     else:
         crop, disease = class_name, "unknown"
     return crop, disease
+
+
+def get_crop_class_indices(crop: str, class_names: List[str]) -> List[int]:
+    """
+    Return the list of original 36-class indices whose class names belong to the
+    given crop prefix (e.g. 'rice' matches 'rice__blast', 'rice__tungro', ...).
+
+    Args:
+        crop:         Lowercase crop name (e.g. 'rice').
+        class_names:  Full ordered list of class names from the checkpoint.
+
+    Returns:
+        List of integer indices into class_names.
+
+    Raises:
+        ValueError: If crop is not in VALID_CROPS or if no matching classes are found.
+    """
+    crop = crop.strip().lower()
+    if crop not in VALID_CROPS:
+        raise ValueError(
+            f"Unknown crop '{crop}'. "
+            f"Valid options are: {', '.join(sorted(VALID_CROPS))}"
+        )
+    prefix = crop + "__"
+    indices = [i for i, cls in enumerate(class_names) if cls.startswith(prefix)]
+    if not indices:
+        raise ValueError(
+            f"No classes found for crop '{crop}' in the loaded checkpoint. "
+            f"Loaded classes: {class_names}"
+        )
+    return indices
 
 
 def load_model(
@@ -107,10 +142,32 @@ def predict_image(
     classes_path: Optional[Union[str, Path]] = DEFAULT_CLASSES_PATH,
     device: Optional[torch.device] = None,
     top_k: int = 3,
+    crop: Optional[str] = None,
 ) -> Dict:
     """
     Run EfficientNet-B0 inference on an image.
     Supports file path or PIL Image instance for reusable backend integration.
+
+    Args:
+        image_input:      File path (str/Path) or PIL Image.
+        model:            Optional pre-loaded model. Loaded from checkpoint if None.
+        class_names:      Optional list of class names. Loaded from checkpoint if None.
+        checkpoint_path:  Path to model checkpoint.
+        classes_path:     Path to class mapping JSON.
+        device:           Torch device (CUDA/CPU). Auto-detected if None.
+        top_k:            Number of top predictions to return.
+        crop:             Optional crop filter for crop-aware inference
+                          (e.g. 'rice', 'banana'). When supplied, logits for all
+                          classes NOT belonging to this crop are set to -inf before
+                          softmax, so rankings are restricted to that crop's classes.
+                          Pass None (default) to preserve full 36-class inference.
+
+    Returns:
+        Dict with keys: predicted_class, crop, disease, confidence, top_predictions.
+
+    Raises:
+        ValueError:      If crop is not a recognised crop name.
+        FileNotFoundError: If image or checkpoint path is missing.
     """
     if device is None:
         device = get_device()
@@ -121,6 +178,13 @@ def predict_image(
             classes_path=classes_path,
             device=device,
         )
+
+    # Validate and resolve crop filter before heavy inference work.
+    crop_indices: Optional[List[int]] = None
+    if crop is not None:
+        crop = crop.strip().lower()
+        # get_crop_class_indices raises ValueError for unknown crops.
+        crop_indices = get_crop_class_indices(crop, class_names)
 
     # Load and convert image
     if isinstance(image_input, (str, Path)):
@@ -137,34 +201,48 @@ def predict_image(
     transform = get_transform()
     tensor = transform(image).unsqueeze(0).to(device)
 
-    # Run inference
+    # Run forward pass — always the full 36-class model.
     with torch.no_grad():
-        outputs = model(tensor)
-        probabilities = F.softmax(outputs, dim=1).squeeze(0)
+        logits = model(tensor).squeeze(0)  # shape (num_classes,)
 
-    # Top-K predictions
-    k = min(top_k, len(class_names))
-    top_probs, top_indices = torch.topk(probabilities, k=k)
+        if crop_indices is not None:
+            # Crop-aware masking: set logits of other-crop classes to -inf.
+            # This restricts softmax probability mass to the selected crop's classes
+            # while preserving the original class indices (required for Grad-CAM).
+            mask = torch.full((len(class_names),), float("-inf"), device=device)
+            for idx in crop_indices:
+                mask[idx] = logits[idx]
+            logits = mask
+
+        probabilities = F.softmax(logits, dim=0)  # shape (num_classes,)
+
+    # Top-K predictions restricted to whichever classes have finite probability.
+    effective_k = min(top_k, len(crop_indices) if crop_indices is not None else len(class_names))
+    top_probs, top_indices = torch.topk(probabilities, k=effective_k)
 
     top_probs = top_probs.cpu().tolist()
-    top_indices = top_indices.cpu().tolist()
+    top_indices = top_indices.cpu().tolist()  # original 36-class indices — preserved for Grad-CAM
 
     top_predictions = []
     for prob, idx in zip(top_probs, top_indices):
         cls_name = class_names[idx]
-        crop, disease = parse_class_name(cls_name)
+        pred_crop, disease = parse_class_name(cls_name)
         top_predictions.append({
             "class": cls_name,
-            "crop": crop,
+            "crop": pred_crop,
             "disease": disease,
             "confidence": float(prob),
         })
 
     best_pred = top_predictions[0]
 
+    # When crop-aware mode is active, the returned crop is the user-supplied crop,
+    # not the one parsed from the class name (they should be equal, but this is explicit).
+    returned_crop = crop if crop is not None else best_pred["crop"]
+
     return {
         "predicted_class": best_pred["class"],
-        "crop": best_pred["crop"],
+        "crop": returned_crop,
         "disease": best_pred["disease"],
         "confidence": best_pred["confidence"],
         "top_predictions": top_predictions,
@@ -208,12 +286,23 @@ def main():
         default=str(DEFAULT_CLASSES_PATH),
         help="Path to class mapping file (default: ml/classes.json)",
     )
+    parser.add_argument(
+        "--crop",
+        type=str,
+        default=None,
+        help=(
+            "Optional crop filter for crop-aware inference. "
+            f"Valid options: {', '.join(sorted(VALID_CROPS))}. "
+            "When supplied, only disease classes for this crop are ranked."
+        ),
+    )
     args = parser.parse_args()
 
     result = predict_image(
         image_input=args.image_path,
         checkpoint_path=args.checkpoint,
         classes_path=args.classes,
+        crop=args.crop,
     )
 
     print_prediction_results(result)
