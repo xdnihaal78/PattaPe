@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Python cache and bytecode
 __pycache__/
 *.py[cod]
@@ -14,3 +15,24 @@ ENV/
 # OS files
 .DS_Store
 Thumbs.db
+=======
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# ML datasets and generated data
+ml/raw_data/
+ml/data/
+
+# ML outputs
+ml/checkpoints/
+ml/runs/
+ml/outputs/
+ml/heatmaps/
+
+# Environment / local files
+.env
+!.env.example
+>>>>>>> nimisha/rules-enrichment
