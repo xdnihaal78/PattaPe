@@ -452,4 +452,13 @@ async def predict(
         timestamp=timestamp,
     )
 
+    # 8. Persist Case via Repositories Layer (Task 1)
+    try:
+        from app.repositories import case_repository
+        if hasattr(case_repository, "save_case"):
+            await case_repository.save_case(response)
+    except Exception as db_err:
+        logger.error("Failed to persist case %s to database repository: %s", case_id, db_err)
+        # Non-critical: Controlled failure guarantees prediction response is returned
+
     return response

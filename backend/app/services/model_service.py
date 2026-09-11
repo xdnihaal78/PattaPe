@@ -13,6 +13,7 @@ from dataclasses import asdict, dataclass, field
 import logging
 import os
 from pathlib import Path
+import sys
 from typing import Any, Dict, List, Optional
 
 # Load environment variables if python-dotenv is available
@@ -194,16 +195,28 @@ def _real_inference_sync(
     Invokes M1's trained EfficientNet-B0 and Grad-CAM when weights exist.
     """
     try:
-        # Check if ml.predict and checkpoint are present
-        from ml.predict import predict_image as ml_predict_image, DEFAULT_CHECKPOINT_PATH
+        # Check if checkpoint is present at ml/checkpoints/best.pt
+        repo_root = Path(__file__).resolve().parent.parent.parent.parent
+        checkpoint_path = repo_root / "ml" / "checkpoints" / "best.pt"
+        classes_path = repo_root / "ml" / "classes.json"
+
+        if not checkpoint_path.exists():
+            raise FileNotFoundError(f"Model checkpoint not found at: {checkpoint_path}")
+
+        if str(repo_root) not in sys.path:
+            sys.path.insert(0, str(repo_root))
+
+        from ml.predict import predict_image as ml_predict_image
         import io
         from PIL import Image
 
-        if not Path(DEFAULT_CHECKPOINT_PATH).exists():
-            raise FileNotFoundError(f"Model checkpoint not found at {DEFAULT_CHECKPOINT_PATH}")
-
         image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-        res = ml_predict_image(image, crop=crop)
+        res = ml_predict_image(
+            image,
+            crop=crop,
+            checkpoint_path=checkpoint_path,
+            classes_path=classes_path if classes_path.exists() else None,
+        )
 
         # Grad-CAM heatmap generation if available
         heatmap_url = None

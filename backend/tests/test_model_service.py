@@ -163,3 +163,116 @@ async def test_inference_handles_unhandled_failure_gracefully(monkeypatch):
     assert result.heatmap_url is None
     assert result.affected_pct == 0.0
     assert result.crop == "chilli"
+
+
+@pytest.mark.asyncio
+async def test_real_model_missing_checkpoint_triggers_controlled_fallback():
+    """
+    Verify that when MOCK_MODEL=false and ml/checkpoints/best.pt does not exist,
+    the model service does NOT crash with 500, but returns controlled fallback:
+    disease='unknown', confidence=0.0, top3=[], heatmap_url=None.
+    """
+    dummy_image = b"dummy-leaf-bytes"
+    result = await predict_image(
+        image_bytes=dummy_image,
+        crop="rice",
+        mock_mode=False,
+    )
+
+    assert isinstance(result, ModelOutput)
+    assert result.is_fallback is True
+    assert "inference_error" in (result.fallback_reason or "")
+    assert result.disease == "unknown"
+    assert result.confidence == 0.0
+    assert result.top3 == []
+    assert result.heatmap_url is None
+    assert result.affected_pct == 0.0
+    assert result.crop == "rice"
+
+
+@pytest.mark.asyncio
+async def test_real_model_invalid_checkpoint_triggers_controlled_fallback(monkeypatch):
+    """
+    Verify that when MOCK_MODEL=false and checkpoint loading or model evaluation
+    raises an unexpected exception (e.g. invalid checkpoint format), controlled fallback is returned.
+    """
+    import app.services.model_service as ms
+
+    def fake_real_inference_crashing(*args, **kwargs):
+        raise ValueError("Invalid checkpoint header: not a valid PyTorch state_dict")
+
+    monkeypatch.setattr(ms, "_real_inference_sync", fake_real_inference_crashing)
+
+    dummy_image = b"dummy-leaf-bytes"
+    result = await predict_image(
+        image_bytes=dummy_image,
+        crop="banana",
+        mock_mode=False,
+    )
+
+    assert isinstance(result, ModelOutput)
+    assert result.is_fallback is True
+    assert "inference_error" in (result.fallback_reason or "")
+    assert result.disease == "unknown"
+    assert result.confidence == 0.0
+    assert result.top3 == []
+    assert result.heatmap_url is None
+    assert result.affected_pct == 0.0
+    assert result.crop == "banana"
+
+
+@pytest.mark.asyncio
+async def test_real_model_inference_output_contract(monkeypatch):
+    """
+    Verify that when real ML inference succeeds (simulated via M1 output contract),
+    the returned ModelOutput contains the exact 6 ML-owned fields:
+    - crop, disease, confidence, top3, affected_pct, heatmap_url.
+    """
+    import app.services.model_service as ms
+
+    def fake_real_inference_success(image_bytes, crop=None):
+        return ModelOutput(
+            crop=crop or "groundnut",
+            disease="rust",
+            confidence=0.965,
+            top3=[
+                {"disease": "rust", "confidence": 0.965},
+                {"disease": "early_leaf_spot", "confidence": 0.025},
+                {"disease": "late_leaf_spot", "confidence": 0.010},
+            ],
+            affected_pct=15.5,
+            heatmap_url="/static/heatmaps/demo_groundnut_rust.png",
+            is_fallback=False,
+        )
+
+    monkeypatch.setattr(ms, "_real_inference_sync", fake_real_inference_success)
+
+    dummy_image = b"dummy-leaf-bytes"
+    result = await predict_image(
+        image_bytes=dummy_image,
+        crop="groundnut",
+        mock_mode=False,
+    )
+
+    assert isinstance(result, ModelOutput)
+    assert result.is_fallback is False
+    assert result.crop == "groundnut"
+    assert result.disease == "rust"
+    assert isinstance(result.confidence, float)
+    assert result.confidence == 0.965
+    assert len(result.top3) == 3
+    assert result.top3[0]["disease"] == "rust"
+    assert isinstance(result.affected_pct, float)
+    assert result.heatmap_url == "/static/heatmaps/demo_groundnut_rust.png"
+
+    # Verify dictionary export strictly contains the 6 ML-owned fields
+    six_fields = result.to_dict()
+    assert set(six_fields.keys()) == {
+        "crop",
+        "disease",
+        "confidence",
+        "top3",
+        "affected_pct",
+        "heatmap_url",
+    }
+
