@@ -16,8 +16,8 @@ export const TRANSLATIONS = {
     step1Sub: 'Tap the crop you want to check today',
     step2Title: 'Take or Upload Leaf Photo',
     step2Sub: 'Ensure leaf is clear and well lit under sunlight',
-    step3Title: 'AI Doctor is Inspecting Leaf...',
-    step3Sub: 'Analyzing spots, weather patterns, and spread risks',
+    step3Title: 'Analyzing your crop...',
+    step3Sub: 'This may take a few seconds',
     step4Title: 'Diagnosis Results',
     nextButton: 'Next: Take Photo',
     analyzeButton: 'Analyze Leaf Now',
@@ -33,7 +33,14 @@ export const TRANSLATIONS = {
     culturalTab: 'Organic & Practices',
     chemicalTab: 'Chemical Spray',
     preventionTab: 'Field Prevention',
-    ticketSubmitted: 'Escalation Sent Successfully!'
+    ticketSubmitted: 'Escalation Sent Successfully!',
+    analyzingSteps: [
+      { title: 'Checking leaf symptoms', detail: 'Scanning lesions, chlorosis & leaf surface' },
+      { title: 'Identifying possible disease', detail: 'Matching against 50,000+ crop pathogen samples' },
+      { title: 'Measuring affected area', detail: 'Calculating damage percentage and leaf coverage' },
+      { title: 'Checking 72-hour spread risk', detail: 'Assessing weather, moisture & spore propagation' },
+      { title: 'Preparing advice', detail: 'Generating verified ICAR & KVK treatment protocol' }
+    ]
   },
   hi: {
     appTitle: 'पत्तापे – एआई फसल डॉक्टर',
@@ -42,8 +49,8 @@ export const TRANSLATIONS = {
     step1Sub: 'जिस फसल की जांच करनी है उस पर टैप करें',
     step2Title: 'बीमार पत्ती का फोटो लें या अपलोड करें',
     step2Sub: 'पत्ती साफ और अच्छी धूप में दिखनी चाहिए',
-    step3Title: 'एआई डॉक्टर पत्ती की जांच कर रहा है...',
-    step3Sub: 'धब्बों, मौसम और फैलने के खतरे की जांच जारी है',
+    step3Title: 'आपकी फसल का विश्लेषण हो रहा है...',
+    step3Sub: 'कृपया कुछ सेकंड प्रतीक्षा करें',
     step4Title: 'जांच रिपोर्ट और उपचार',
     nextButton: 'आगे: फोटो खींचें',
     analyzeButton: 'पत्ती की जांच करें',
@@ -59,7 +66,14 @@ export const TRANSLATIONS = {
     culturalTab: 'जैविक व घरेलू उपाय',
     chemicalTab: 'रासायनिक दवा छिड़काव',
     preventionTab: 'बचाव और सावधानियां',
-    ticketSubmitted: 'कृषि अधिकारी को सूचना भेजी गई!'
+    ticketSubmitted: 'कृषि अधिकारी को सूचना भेजी गई!',
+    analyzingSteps: [
+      { title: 'Checking leaf symptoms', detail: 'पत्ती के लक्षणों और धब्बों की जांच' },
+      { title: 'Identifying possible disease', detail: 'संभावित बीमारी और रोगाणु की पहचान' },
+      { title: 'Measuring affected area', detail: 'प्रभावित पत्ती क्षेत्र का सटीक मापन' },
+      { title: 'Checking 72-hour spread risk', detail: '72 घंटे में बीमारी फैलने का खतरा' },
+      { title: 'Preparing advice', detail: 'सटीक उपचार और कृषि सलाह तैयार' }
+    ]
   }
 };
 
@@ -110,39 +124,70 @@ export function stopSpeech() {
  */
 export function getSeverityStyle(severity) {
   switch (severity?.toLowerCase()) {
+    case 'severe':
     case 'critical':
+    case 'high':
       return {
         bg: 'bg-red-700',
         text: 'text-white',
         border: 'border-red-900',
-        label: 'CRITICAL / अत्यंत गंभीर',
-        iconColor: '#991B1B'
-      };
-    case 'high':
-      return {
-        bg: 'bg-red-600',
-        text: 'text-white',
-        border: 'border-red-700',
-        label: 'HIGH / गंभीर खतरा',
-        iconColor: '#DC2626'
+        badgeBg: 'bg-red-100',
+        badgeText: 'text-red-800',
+        badgeBorder: 'border-red-300',
+        label: 'Severe',
+        localLabel: 'गंभीर',
+        iconColor: '#B91C1C'
       };
     case 'moderate':
     case 'medium':
       return {
         bg: 'bg-amber-600',
         text: 'text-white',
-        border: 'border-amber-700',
-        label: 'MODERATE / मध्यम',
+        border: 'border-amber-800',
+        badgeBg: 'bg-amber-100',
+        badgeText: 'text-amber-900',
+        badgeBorder: 'border-amber-300',
+        label: 'Moderate',
+        localLabel: 'मध्यम',
         iconColor: '#D97706'
       };
+    case 'mild':
+      return {
+        bg: 'bg-lime-600',
+        text: 'text-white',
+        border: 'border-lime-800',
+        badgeBg: 'bg-lime-100',
+        badgeText: 'text-lime-900',
+        badgeBorder: 'border-lime-300',
+        label: 'Mild',
+        localLabel: 'हल्का',
+        iconColor: '#65A30D'
+      };
+    case 'trace':
     case 'low':
     default:
       return {
         bg: 'bg-emerald-700',
         text: 'text-white',
-        border: 'border-emerald-800',
-        label: 'LOW / कम खतरा',
-        iconColor: '#15803D'
+        border: 'border-emerald-900',
+        badgeBg: 'bg-emerald-100',
+        badgeText: 'text-emerald-900',
+        badgeBorder: 'border-emerald-300',
+        label: 'Trace',
+        localLabel: 'नगण्य (कम)',
+        iconColor: '#047857'
       };
   }
+}
+
+/**
+ * Human-readable formatter for disease keys like "bacterial_leaf_blight" or "rice__bacterial_leaf_blight"
+ */
+export function formatDiseaseName(rawKey) {
+  if (!rawKey) return 'Unknown Condition';
+  const cleanKey = rawKey.includes('__') ? rawKey.split('__')[1] : rawKey;
+  return cleanKey
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
 }
