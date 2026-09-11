@@ -7,7 +7,7 @@ import {
 import FieldStatsCards from '../components/officer/FieldStatsCards';
 import CropDistributionChart from '../components/officer/CropDistributionChart';
 import CasesOverTimeChart from '../components/officer/CasesOverTimeChart';
-import DiagnosisCasesTable from '../components/officer/DiagnosisCasesTable';
+import OfficerCaseTable from '../components/officer/OfficerCaseTable';
 import { RefreshCw, RotateCcw, Activity } from 'lucide-react';
 
 export default function OfficerDashboard() {

@@ -14,7 +14,7 @@ import {
   ShieldAlert,
   Shield
 } from 'lucide-react';
-import { VILLAGES } from '../../services/officerService';
+
 
 export default function OfficerCaseTable({
   cases,
@@ -203,18 +203,18 @@ export default function OfficerCaseTable({
         )}
       </div>
 
-      {/* Filter and Search Toolbar */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3">
-        
-        {/* Search Input (4 cols on lg) */}
-        <div className="lg:col-span-4 relative">
-          <Search className="w-5 h-5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+      {/* ── SIMPLE FILTER BAR ── */}
+      <div className="space-y-4">
+
+        {/* ROW 1: Search input */}
+        <div className="relative">
+          <Search className="w-5 h-5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
-            placeholder="Search farmer, village, or disease..."
+            placeholder="Search by farmer name, village, or disease…"
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full pl-10 pr-8 py-3 bg-slate-50 border-2 border-slate-300 focus:border-emerald-600 focus:bg-white rounded-2xl text-sm font-bold text-slate-900 placeholder:text-slate-400 outline-none transition"
+            className="w-full pl-10 pr-10 py-3 bg-slate-50 border-2 border-slate-300 focus:border-emerald-600 focus:bg-white rounded-2xl text-sm font-bold text-slate-900 placeholder:text-slate-400 outline-none transition"
           />
           {searchTerm && (
             <button
@@ -226,78 +226,90 @@ export default function OfficerCaseTable({
           )}
         </div>
 
-        {/* Village Filter (2 cols) */}
-        <div className="lg:col-span-2">
-          <select
-            value={selectedVillage || 'all'}
-            onChange={(e) => onVillageChange && onVillageChange(e.target.value)}
-            className="w-full py-3 px-3.5 bg-slate-50 border-2 border-slate-300 focus:border-emerald-600 rounded-2xl text-sm font-bold text-slate-800 outline-none cursor-pointer"
-          >
-            <option value="all">📍 All 4 Villages</option>
-            {VILLAGES.map((v) => (
-              <option key={v} value={v}>📍 {v}</option>
-            ))}
-          </select>
+        {/* ROW 2: Crop filter pill-buttons */}
+        <div className="space-y-1.5">
+          <p className="text-xs font-black text-slate-500 uppercase tracking-wider">🌱 Filter by Crop</p>
+          <div className="flex flex-wrap gap-2">
+            {[
+              { value: 'all',        label: 'All Crops',  emoji: '🌱' },
+              { value: 'Rice',       label: 'Rice',       emoji: '🌾' },
+              { value: 'Chilli',     label: 'Chilli',     emoji: '🌶️' },
+              { value: 'Banana',     label: 'Banana',     emoji: '🍌' },
+              { value: 'Groundnut',  label: 'Groundnut',  emoji: '🥜' },
+              { value: 'Sugarcane',  label: 'Sugarcane',  emoji: '🎋' },
+            ].map(({ value, label, emoji }) => {
+              const active = selectedCrop === value;
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => onCropChange(value)}
+                  className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-2xl text-sm font-black border-2 transition
+                    ${active
+                      ? 'bg-emerald-700 border-emerald-700 text-white shadow-md'
+                      : 'bg-white border-slate-300 text-slate-700 hover:border-emerald-500 hover:text-emerald-800 hover:bg-emerald-50'
+                    }`}
+                >
+                  <span>{emoji}</span>
+                  <span>{label}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        {/* Crop Filter (2 cols) */}
-        <div className="lg:col-span-2">
-          <select
-            value={selectedCrop}
-            onChange={(e) => onCropChange(e.target.value)}
-            className="w-full py-3 px-3.5 bg-slate-50 border-2 border-slate-300 focus:border-emerald-600 rounded-2xl text-sm font-bold text-slate-800 outline-none cursor-pointer"
-          >
-            <option value="all">🌱 All Crops</option>
-            <option value="Rice">🌾 Rice (धान)</option>
-            <option value="Chilli">🌶️ Chilli (मिर्च)</option>
-            <option value="Banana">🍌 Banana (केला)</option>
-            <option value="Groundnut">🥜 Groundnut (मूंगफली)</option>
-            <option value="Sugarcane">🎋 Sugarcane (गन्ना)</option>
-          </select>
+        {/* ROW 3: Severity filter pill-buttons */}
+        <div className="space-y-1.5">
+          <p className="text-xs font-black text-slate-500 uppercase tracking-wider">🩺 Filter by Severity</p>
+          <div className="flex flex-wrap gap-2">
+            {[
+              { value: 'all',      label: 'All Levels', color: 'bg-white border-slate-300 text-slate-700 hover:border-slate-500',              activeColor: 'bg-slate-700 border-slate-700 text-white' },
+              { value: 'trace',    label: '🟢 Trace',   color: 'bg-white border-emerald-300 text-emerald-800 hover:bg-emerald-50',              activeColor: 'bg-emerald-600 border-emerald-600 text-white' },
+              { value: 'mild',     label: '🔵 Mild',    color: 'bg-white border-blue-300 text-blue-800 hover:bg-blue-50',                       activeColor: 'bg-blue-600 border-blue-600 text-white' },
+              { value: 'moderate', label: '🟡 Moderate',color: 'bg-white border-amber-300 text-amber-800 hover:bg-amber-50',                    activeColor: 'bg-amber-500 border-amber-500 text-white' },
+              { value: 'severe',   label: '🔴 Severe',  color: 'bg-white border-red-300 text-red-800 hover:bg-red-50',                          activeColor: 'bg-red-600 border-red-600 text-white' },
+            ].map(({ value, label, color, activeColor }) => {
+              const active = selectedSeverity === value;
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => onSeverityChange(value)}
+                  className={`px-4 py-2 rounded-2xl text-sm font-black border-2 transition
+                    ${active ? activeColor : color}`}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        {/* Status Filter (2 cols) */}
-        <div className="lg:col-span-2">
-          <select
-            value={selectedStatus}
-            onChange={(e) => onStatusChange(e.target.value)}
-            className="w-full py-3 px-3.5 bg-slate-50 border-2 border-slate-300 focus:border-emerald-600 rounded-2xl text-sm font-bold text-slate-800 outline-none cursor-pointer"
-          >
-            <option value="all">All Statuses</option>
-            <option value="Pending Review">⏳ Pending Review</option>
-            <option value="Confirmed">✅ Confirmed</option>
-            <option value="Overridden">✏️ Overridden</option>
-            <option value="Lab Test Requested">🧪 Lab Test Requested</option>
-          </select>
-        </div>
-
-        {/* Severity Filter (2 cols) */}
-        <div className="lg:col-span-2">
-          <select
-            value={selectedSeverity}
-            onChange={(e) => onSeverityChange(e.target.value)}
-            className="w-full py-3 px-3.5 bg-slate-50 border-2 border-slate-300 focus:border-emerald-600 rounded-2xl text-sm font-bold text-slate-800 outline-none cursor-pointer"
-          >
-            <option value="all">All Severity</option>
-            <option value="severe">🔴 Severe Damage</option>
-            <option value="moderate">🟡 Moderate</option>
-            <option value="mild">🔵 Mild</option>
-            <option value="trace">🟢 Trace (Normal)</option>
-          </select>
-        </div>
-
-        {/* Risk Filter (2 cols) */}
-        <div className="lg:col-span-2">
-          <select
-            value={selectedRisk || 'all'}
-            onChange={(e) => onRiskChange && onRiskChange(e.target.value)}
-            className="w-full py-3 px-3.5 bg-slate-50 border-2 border-slate-300 focus:border-emerald-600 rounded-2xl text-sm font-bold text-slate-800 outline-none cursor-pointer"
-          >
-            <option value="all">All Risk Levels</option>
-            <option value="high">🔴 High Risk</option>
-            <option value="moderate">🟡 Medium Risk</option>
-            <option value="low">🟢 Low Risk (Safe)</option>
-          </select>
+        {/* ROW 4: Status filter pill-buttons */}
+        <div className="space-y-1.5">
+          <p className="text-xs font-black text-slate-500 uppercase tracking-wider">📋 Filter by Status</p>
+          <div className="flex flex-wrap gap-2">
+            {[
+              { value: 'all',                 label: 'All Statuses',       activeColor: 'bg-slate-700 border-slate-700 text-white',   idleColor: 'bg-white border-slate-300 text-slate-700 hover:border-slate-500' },
+              { value: 'Pending Review',       label: '⏳ Pending Review',  activeColor: 'bg-amber-500 border-amber-500 text-white',   idleColor: 'bg-white border-amber-300 text-amber-800 hover:bg-amber-50' },
+              { value: 'Confirmed',            label: '✅ Confirmed',        activeColor: 'bg-emerald-600 border-emerald-600 text-white',idleColor: 'bg-white border-emerald-300 text-emerald-800 hover:bg-emerald-50' },
+              { value: 'Overridden',           label: '✏️ Overridden',       activeColor: 'bg-purple-600 border-purple-600 text-white', idleColor: 'bg-white border-purple-300 text-purple-800 hover:bg-purple-50' },
+              { value: 'Lab Test Requested',   label: '🧪 Lab Requested',   activeColor: 'bg-rose-600 border-rose-600 text-white',     idleColor: 'bg-white border-rose-300 text-rose-800 hover:bg-rose-50' },
+            ].map(({ value, label, activeColor, idleColor }) => {
+              const active = selectedStatus === value;
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => onStatusChange(value)}
+                  className={`px-4 py-2 rounded-2xl text-sm font-black border-2 transition
+                    ${active ? activeColor : idleColor}`}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
       </div>
