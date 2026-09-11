@@ -1,16 +1,19 @@
 import React, { useState } from 'react';
 import { Eye, Flame, Image as ImageIcon } from 'lucide-react';
+import { TRANSLATIONS } from '../utils/helpers';
 
 /**
  * LeafHeatmap Component
  * Displays:
  * - The uploaded farmer leaf image when available
  * - The AI heatmap image from heatmap_url when available
- * Compact, proportional, and clean.
+ * Full multi-language support (en, hi, ta, kn).
  */
-export default function LeafHeatmap({ uploadedImage, heatmapUrl }) {
+export default function LeafHeatmap({ uploadedImage, heatmapUrl, currentLang = 'en' }) {
   const [activeMode, setActiveMode] = useState('standard'); // 'standard' | 'heatmap'
   const [heatmapImageError, setHeatmapImageError] = useState(false);
+
+  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.en;
 
   // Fallback sample image if none provided
   const fallbackImage = 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=800&q=80';
@@ -63,12 +66,12 @@ export default function LeafHeatmap({ uploadedImage, heatmapUrl }) {
           {activeMode === 'heatmap' ? (
             <>
               <Flame className="w-3 h-3 text-amber-400 animate-pulse" />
-              <span>AI Heatmap</span>
+              <span>{t.aiHeatmap || 'AI Heatmap'}</span>
             </>
           ) : (
             <>
               <ImageIcon className="w-3 h-3 text-emerald-400" />
-              <span>Leaf Photo</span>
+              <span>{t.leafPhoto || 'Leaf Photo'}</span>
             </>
           )}
         </div>
@@ -87,12 +90,12 @@ export default function LeafHeatmap({ uploadedImage, heatmapUrl }) {
             {activeMode === 'heatmap' ? (
               <>
                 <Eye className="w-3.5 h-3.5 text-slate-950 stroke-[2.5]" />
-                <span>Original</span>
+                <span>{t.original || 'Original'}</span>
               </>
             ) : (
               <>
                 <Flame className="w-3.5 h-3.5 text-amber-400 stroke-[2.5]" />
-                <span>AI Heatmap</span>
+                <span>{t.aiHeatmap || 'AI Heatmap'}</span>
               </>
             )}
           </button>
@@ -100,8 +103,8 @@ export default function LeafHeatmap({ uploadedImage, heatmapUrl }) {
 
         {/* Bottom bar */}
         <div className="absolute bottom-2 inset-x-2 z-20 bg-slate-950/75 backdrop-blur-xs rounded-lg px-2.5 py-0.5 flex items-center justify-between text-[10px] text-slate-300 font-medium">
-          <span>Leaf Tissue Diagnostic Scan</span>
-          <span className="text-emerald-400 font-semibold">Active Sensor</span>
+          <span>{t.leafTissueScan || 'Leaf Tissue Diagnostic Scan'}</span>
+          <span className="text-emerald-400 font-semibold">{t.activeSensor || 'Active Sensor'}</span>
         </div>
 
       </div>

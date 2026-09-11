@@ -37,8 +37,8 @@ export default function Header({ selectedCrop, currentLang, onLanguageChange }) 
             >
               <span className="text-base">{selectedCrop.icon}</span>
               <div className="text-left">
-                <p className="text-[9px] text-emerald-200 font-bold m-0 leading-none">Crop</p>
-                <p className="text-xs font-bold text-white m-0 leading-tight">{selectedCrop.name.split('/')[0]}</p>
+                <p className="text-[9px] text-emerald-200 font-bold m-0 leading-none">{t.crop || 'Crop'}</p>
+                <p className="text-xs font-bold text-white m-0 leading-tight">{selectedCrop.names_i18n?.[currentLang] || selectedCrop.name.split('/')[0]}</p>
               </div>
             </div>
           )}
@@ -49,8 +49,8 @@ export default function Header({ selectedCrop, currentLang, onLanguageChange }) 
             title="Open Extension Officer Console"
           >
             <ShieldAlert className="w-3.5 h-3.5 text-emerald-400" />
-            <span className="hidden xs:inline">Officer Portal</span>
-            <span className="xs:hidden">Officer</span>
+            <span className="hidden xs:inline">{t.officerPortal || 'Officer Portal'}</span>
+            <span className="xs:hidden">{t.officer || 'Officer'}</span>
           </Link>
 
           <LanguageSwitcher currentLang={currentLang} onLanguageChange={onLanguageChange} />

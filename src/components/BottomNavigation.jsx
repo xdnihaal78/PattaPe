@@ -22,7 +22,7 @@ export default function BottomNavigation({ currentLang, hasResult }) {
           }
         >
           <Home className="w-5 h-5 mb-0.5" />
-          <span className="text-[11px] block leading-tight">1. Crop</span>
+          <span className="text-[11px] block leading-tight">{t.step1Nav || '1. Crop'}</span>
         </NavLink>
 
         {/* Step 2: Upload Leaf */}
@@ -37,7 +37,7 @@ export default function BottomNavigation({ currentLang, hasResult }) {
           }
         >
           <Camera className="w-5 h-5 mb-0.5" />
-          <span className="text-[11px] block leading-tight">2. Photo</span>
+          <span className="text-[11px] block leading-tight">{t.step2Nav || '2. Photo'}</span>
         </NavLink>
 
         {/* Step 3: Result */}
@@ -54,7 +54,7 @@ export default function BottomNavigation({ currentLang, hasResult }) {
           }
         >
           <FileText className="w-5 h-5 mb-0.5" />
-          <span className="text-[11px] block leading-tight">3. Report</span>
+          <span className="text-[11px] block leading-tight">{t.step3Nav || '3. Report'}</span>
         </NavLink>
 
       </div>

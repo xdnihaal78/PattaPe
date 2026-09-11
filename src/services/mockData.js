@@ -104,6 +104,12 @@ export const MOCK_CROPS = [
   {
     id: 'rice',
     name: 'Rice',
+    names_i18n: {
+      en: 'Rice',
+      hi: 'धान',
+      ta: 'நெல்',
+      kn: 'ಭತ್ತ'
+    },
     localName: 'धान (Rice)',
     icon: '🌾',
     popularIn: 'Punjab, UP, WB, AP, TN',
@@ -113,6 +119,12 @@ export const MOCK_CROPS = [
   {
     id: 'chilli',
     name: 'Chilli',
+    names_i18n: {
+      en: 'Chilli',
+      hi: 'मिर्च',
+      ta: 'மிளகாய்',
+      kn: 'ಮೆಣಸಿನಕಾಯಿ'
+    },
     localName: 'मिर्च (Chilli)',
     icon: '🌶️',
     popularIn: 'AP, Telangana, MH, Karnataka',
@@ -122,6 +134,12 @@ export const MOCK_CROPS = [
   {
     id: 'banana',
     name: 'Banana',
+    names_i18n: {
+      en: 'Banana',
+      hi: 'केला',
+      ta: 'வாழை',
+      kn: 'ಬಾಳೆ'
+    },
     localName: 'केला (Banana)',
     icon: '🍌',
     popularIn: 'Tamil Nadu, MH, Gujarat, AP',
@@ -131,6 +149,12 @@ export const MOCK_CROPS = [
   {
     id: 'groundnut',
     name: 'Groundnut',
+    names_i18n: {
+      en: 'Groundnut',
+      hi: 'मूंगफली',
+      ta: 'நிலக்கடலை',
+      kn: 'ಕಡಲೆಕಾಯಿ'
+    },
     localName: 'मूंगफली (Groundnut)',
     icon: '🥜',
     popularIn: 'Gujarat, AP, Rajasthan, TN',
@@ -140,6 +164,12 @@ export const MOCK_CROPS = [
   {
     id: 'sugarcane',
     name: 'Sugarcane',
+    names_i18n: {
+      en: 'Sugarcane',
+      hi: 'गन्ना',
+      ta: 'கரும்பு',
+      kn: 'ಕಬ್ಬು'
+    },
     localName: 'गन्ना (Sugarcane)',
     icon: '🎋',
     popularIn: 'UP, Maharashtra, Karnataka',

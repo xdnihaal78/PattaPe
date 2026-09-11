@@ -1,17 +1,15 @@
 import React, { useState } from 'react';
-import { Layers, ChevronDown, ChevronUp, ShieldAlert, Check } from 'lucide-react';
+import { Layers, ChevronDown, ChevronUp } from 'lucide-react';
+import { TRANSLATIONS } from '../utils/helpers';
 
 /**
  * OtherDiagnosesCard Component
  * Displays remaining candidate diseases from top3 prediction array.
- * Features:
- * - Human-readable disease name
- * - Confidence as a percentage
- * - Simple horizontal confidence indicator
- * - Subdued, secondary presentation to prevent confusing the farmer
+ * Full multi-language support (en, hi, ta, kn).
  */
 export default function OtherDiagnosesCard({ top3, mainDisease, currentLang = 'en' }) {
   const [isExpanded, setIsExpanded] = useState(true);
+  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.en;
 
   if (!Array.isArray(top3) || top3.length <= 1) {
     return null;
@@ -28,51 +26,73 @@ export default function OtherDiagnosesCard({ top3, mainDisease, currentLang = 'e
     return null;
   }
 
-  // Common crop disease name mappings (English & Hindi)
+  // Common crop disease name mappings (English, Hindi, Tamil, Kannada)
   const diseaseNameMap = {
     bacterial_leaf_streak: {
       en: 'Bacterial Leaf Streak',
-      hi: 'जीवाणु पत्ती धारी (Bacterial Leaf Streak)'
+      hi: 'जीवाणु पत्ती धारी',
+      ta: 'பாக்டீரியா இலைக்கோடு நோய்',
+      kn: 'ಬ್ಯಾಕ್ಟೀರಿಯಾ ಎಲೆ ಗೆರೆ ರೋಗ'
     },
     brown_spot: {
       en: 'Brown Spot',
-      hi: 'भूरा धब्बा रोग (Brown Spot)'
+      hi: 'भूरा धब्बा रोग',
+      ta: 'பழுப்பு புள்ளி நோய்',
+      kn: 'ಕಂದು ಚುಕ್ಕೆ ರೋಗ'
     },
     leaf_blast: {
       en: 'Rice Leaf Blast',
-      hi: 'धान का ब्लास्ट रोग (Leaf Blast)'
+      hi: 'धान का ब्लास्ट रोग',
+      ta: 'இலைக் கருகல் / பிளாஸ்ட்',
+      kn: 'ಎಲೆ ಬೆಂಕಿ ರೋಗ'
     },
     bacterial_leaf_blight: {
       en: 'Bacterial Leaf Blight',
-      hi: 'जीवाणु पत्ती झुलसा (Bacterial Blight)'
+      hi: 'जीवाणु पत्ती झुलसा',
+      ta: 'பாக்டீரியா இலைக்கருகல்',
+      kn: 'ದುಂಡಾಣು ಎಲೆ ಕವಚ ರೋಗ'
     },
     sheath_blight: {
       en: 'Sheath Blight',
-      hi: 'शीथ ब्लाइट रोग (Sheath Blight)'
+      hi: 'शीथ ब्लाइट रोग',
+      ta: 'உறை அழுகல் நோய்',
+      kn: 'ಹಾಳೆ ಕವಚ ರೋಗ'
     },
     false_smut: {
       en: 'False Smut',
-      hi: 'झूठा कंडुआ (False Smut)'
+      hi: 'झूठा कंडुआ',
+      ta: 'பொய் கரிப்பூட்டை நோய்',
+      kn: 'ಸುಳ್ಳು ಕಾಡಿಗೆ ರೋಗ'
     },
     leaf_curl: {
       en: 'Leaf Curl Virus',
-      hi: 'पर्ण कुंचन रोग (Leaf Curl)'
+      hi: 'पर्ण कुंचन रोग',
+      ta: 'இலை சுருள் நச்சுயிரி',
+      kn: 'ಎಲೆ ಮುರುಟು ರೋಗ'
     },
     anthracnose: {
       en: 'Anthracnose',
-      hi: 'एंथ्रेक्नोज धब्बा (Anthracnose)'
+      hi: 'एंथ्रेक्नोज धब्बा',
+      ta: 'ஆந்த்ராக்னோஸ் புள்ளி',
+      kn: 'ಆಂಥ್ರಾಕ್ನೋಸ್ ರೋಗ'
     },
     sigatoka: {
       en: 'Sigatoka Leaf Spot',
-      hi: 'सिगाटोका पत्ती धब्बा (Sigatoka)'
+      hi: 'सिगाटोका पत्ती धब्बा',
+      ta: 'சிகாடோகா இலைப்புள்ளி',
+      kn: 'ಸಿಗಾಟೋಕಾ ಎಲೆ ಚುಕ್ಕೆ'
     },
     tikka_leaf_spot: {
       en: 'Tikka Disease',
-      hi: 'टिक्का रोग (Tikka Spot)'
+      hi: 'टिक्का रोग',
+      ta: 'டிக்கா இலைப்புள்ளி நோய்',
+      kn: 'ತಿಕ್ಕಾ ರೋಗ'
     },
     rust: {
       en: 'Leaf Rust',
-      hi: 'गेरुआ / रतुआ रोग (Rust)'
+      hi: 'गेरुआ / रतुआ रोग',
+      ta: 'துரு நோய்',
+      kn: 'ತುಕ್ಕು ರೋಗ'
     }
   };
 
@@ -80,9 +100,8 @@ export default function OtherDiagnosesCard({ top3, mainDisease, currentLang = 'e
     if (!token) return 'Other Plant Condition';
     const key = token.toLowerCase();
     if (diseaseNameMap[key]) {
-      return currentLang === 'hi' ? diseaseNameMap[key].hi : diseaseNameMap[key].en;
+      return diseaseNameMap[key][currentLang] || diseaseNameMap[key].en;
     }
-    // Fallback: replace underscores with spaces and capitalize each word
     return token
       .replace(/_/g, ' ')
       .replace(/\b\w/g, (c) => c.toUpperCase());
@@ -103,19 +122,17 @@ export default function OtherDiagnosesCard({ top3, mainDisease, currentLang = 'e
           </div>
           <div>
             <h3 className="text-xs sm:text-sm font-black text-slate-800 m-0 leading-tight">
-              {currentLang === 'hi' ? 'अन्य संभावित बीमारियां (कम संभावना)' : 'Other Possible Diagnoses'}
+              {t.otherDiagnoses || 'Other Possible Diagnoses'}
             </h3>
             <span className="text-[10px] font-semibold text-slate-500 block leading-tight">
-              {currentLang === 'hi' 
-                ? 'एआई द्वारा जांची गई अन्य कम संभावना वाली बीमारियां' 
-                : 'Secondary conditions evaluated with low confidence'}
+              {t.otherDiagnosesSub || 'Secondary conditions evaluated with low confidence'}
             </span>
           </div>
         </div>
 
         <div className="flex items-center gap-1.5 text-slate-400">
           <span className="text-[10px] font-bold bg-slate-200/80 text-slate-600 px-2 py-0.5 rounded-md">
-            {otherPredictions.length} evaluated
+            {otherPredictions.length} {t.evaluated || 'evaluated'}
           </span>
           {isExpanded ? (
             <ChevronUp className="w-4 h-4 stroke-[2.5]" />
@@ -130,14 +147,13 @@ export default function OtherDiagnosesCard({ top3, mainDisease, currentLang = 'e
         <div className="space-y-2 pt-1 border-t border-slate-200/60 animate-in fade-in duration-200">
           
           {otherPredictions.map((pred, idx) => {
-            // Calculate percentage
             const rawConfidence = pred.confidence;
             const pct = typeof rawConfidence === 'number'
               ? (rawConfidence <= 1 ? Math.round(rawConfidence * 100) : Math.round(rawConfidence))
               : 0;
 
             const displayPct = pct < 1 && rawConfidence > 0 ? '< 1%' : `${pct}%`;
-            const barWidth = Math.max(pct, 2); // Minimum 2% width for visual cue
+            const barWidth = Math.max(pct, 2);
 
             return (
               <div 
@@ -156,7 +172,7 @@ export default function OtherDiagnosesCard({ top3, mainDisease, currentLang = 'e
                   </div>
 
                   <span className="text-xs font-mono font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded border border-slate-200 shrink-0">
-                    {displayPct} match
+                    {displayPct} {t.match || 'match'}
                   </span>
                 </div>
 
@@ -171,11 +187,9 @@ export default function OtherDiagnosesCard({ top3, mainDisease, currentLang = 'e
             );
           })}
 
-          {/* Reassurance Footer note for Farmer Trust */}
+          {/* Reassurance Footer note */}
           <p className="text-[10px] sm:text-[11px] font-medium text-slate-500 m-0 pt-0.5 italic leading-tight text-center sm:text-left">
-            {currentLang === 'hi' 
-              ? '💡 ध्यान दें: मुख्य पहचान ऊपर दिखाई गई है। इन बीमारियों के लक्षण बहुत कम पाए गए हैं।'
-              : '💡 Note: The primary diagnosis above is the most likely match. These alternatives have very low matching symptoms.'}
+            💡 {t.otherDiagnosesNote || 'Note: The primary diagnosis above is the most likely match.'}
           </p>
 
         </div>

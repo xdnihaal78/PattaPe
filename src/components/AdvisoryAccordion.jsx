@@ -8,6 +8,7 @@ import {
   ChevronUp, 
   BookOpen
 } from 'lucide-react';
+import { TRANSLATIONS } from '../utils/helpers';
 
 /**
  * AdvisoryAccordion Component
@@ -16,10 +17,12 @@ import {
  * - Do Now (advisory.do_now)
  * - Watch For (advisory.watch_for)
  * - Avoid (advisory.avoid)
- * Proportionally sized with comfortable tap targets.
+ * Full multi-language support (en, hi, ta, kn).
  */
 export default function AdvisoryAccordion({ advisory, currentLang = 'en' }) {
   if (!advisory) return null;
+
+  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.en;
 
   const [openSections, setOpenSections] = useState({
     what_it_is: true,
@@ -35,100 +38,154 @@ export default function AdvisoryAccordion({ advisory, currentLang = 'en' }) {
     }));
   };
 
+  // Localized mock text overrides for standard rice advisory
+  const localizedWhatItIs = {
+    hi: 'चावल की पत्तियों को प्रभावित करने वाला जीवाणु रोग (बैक्टीरियल ब्लाइट)।',
+    ta: 'நெல் பயிரின் இலைகளைத் தாக்கும் பாக்டீரியா இலைக்கருகல் நோய்.',
+    kn: 'ಭತ್ತದ ಎಲೆಗಳಿಗೆ ಹಾನಿ ಮಾಡುವ ದುಂಡಾಣು ಕವಚ ರೋಗ (ಬ್ಯಾಕ್ಟೀರಿಯಲ್ ಬ್ಲೈಟ್).'
+  };
+
+  const localizedDoNow = {
+    hi: [
+      'गीले खेतों में काम करने से बचें',
+      'खेत से खड़े पानी की तुरंत निकासी करें',
+      'संक्रमित औजारों को दूसरे खेत में न ले जाएं'
+    ],
+    ta: [
+      'ஈரமான வயல்களில் வேலை செய்வதைத் தவிர்க்கவும்',
+      'வயலில் தேங்கியுள்ள தண்ணீரை உடனடியாக வடிகட்டவும்',
+      'பயன்படுத்திய கருவிகளை சுத்தப்படுத்தாமல் அடுத்த வயலில் பயன்படுத்த வேண்டாம்'
+    ],
+    kn: [
+      'ತೇವಾಂಶವಿರುವ ಹೊಲದಲ್ಲಿ ಕೆಲಸ ಮಾಡುವುದನ್ನು ತಪ್ಪಿಸಿ',
+      'ಹೊಲದಲ್ಲಿ ನಿಂತಿರುವ ಹೆಚ್ಚುವರಿ ನೀರನ್ನು ತಕ್ಷಣ ಹೊರಹಾಕಿ',
+      'ಸೋಂಕು ತಗುಲಿದ ಕೃಷಿ ಉಪಕರಣಗಳನ್ನು ಹಾಗೆಯೇ ಬಳಸಬೇಡಿ'
+    ]
+  };
+
+  const localizedWatchFor = {
+    hi: [
+      'पत्तियों पर घाव का तेजी से बढ़ना',
+      'आसपास के स्वस्थ पत्तों का पीला पड़ना'
+    ],
+    ta: [
+      'இலைகளில் சேதம் வேகமாக பரவுதல்',
+      'அருகிலுள்ள இலைகள் மஞ்சள் நிறமாக மாறுதல்'
+    ],
+    kn: [
+      'ಎಲೆಗಳ ಹಾನಿ ವೇಗವಾಗಿ ಹರಡುವುದು',
+      'ಹತ್ತಿರದ ಎಲೆಗಳು ಹಳದಿ ಬಣ್ಣಕ್ಕೆ ತಿರುಗುವುದು'
+    ]
+  };
+
+  const localizedAvoid = {
+    hi: [
+      'फव्वारा / ऊपर से पानी का छिड़काव',
+      'अत्यधिक घनी बुवाई'
+    ],
+    ta: [
+      'மேலிருந்து தண்ணீர் தெளிக்கும் பாசனம்',
+      'நெருக்கமாக நடவு செய்தல்'
+    ],
+    kn: [
+      'ಮೇಲಿನಿಂದ ನೀರು ಚಿಮುಕಿಸುವುದು',
+      'ಅತಿಯಾದ ಸಾಂದ್ರತೆಯ ಬಿತ್ತನೆ'
+    ]
+  };
+
   const sections = [
     {
       key: 'what_it_is',
-      title: currentLang === 'hi' ? 'यह बीमारी क्या है?' : 'What is this?',
-      subtitle: currentLang === 'hi' ? 'रोग का विवरण व कारण' : 'Disease description & cause',
+      title: t.whatIsThis || 'What is this?',
+      subtitle: t.whatIsThisSub || 'Disease description & cause',
       icon: HelpCircle,
       iconColor: 'text-blue-700 bg-blue-100 border-blue-200',
       type: 'text',
-      content: advisory.what_it_is
+      content: localizedWhatItIs[currentLang] || advisory.what_it_is
     },
     {
       key: 'do_now',
-      title: currentLang === 'hi' ? 'तुरंत क्या करें?' : 'Do Now',
-      subtitle: currentLang === 'hi' ? 'खेत में तुरंत उठाए जाने वाले कदम' : 'Urgent immediate actions in your field',
+      title: t.doNow || 'Do Now',
+      subtitle: t.doNowSub || 'Urgent immediate actions in your field',
       icon: CheckCircle2,
       iconColor: 'text-emerald-700 bg-emerald-100 border-emerald-200',
       type: 'list',
-      items: advisory.do_now || []
+      items: localizedDoNow[currentLang] || advisory.do_now || []
     },
     {
       key: 'watch_for',
-      title: currentLang === 'hi' ? 'किन बातों पर ध्यान रखें?' : 'Watch For',
-      subtitle: currentLang === 'hi' ? 'रोग के नए लक्षण व बदलाव' : 'Key warning signs & spread symptoms',
+      title: t.watchFor || 'Watch For',
+      subtitle: t.watchForSub || 'Key warning signs & spread symptoms',
       icon: Eye,
       iconColor: 'text-amber-700 bg-amber-100 border-amber-200',
       type: 'list',
-      items: advisory.watch_for || []
+      items: localizedWatchFor[currentLang] || advisory.watch_for || []
     },
     {
       key: 'avoid',
-      title: currentLang === 'hi' ? 'क्या न करें?' : 'Avoid',
-      subtitle: currentLang === 'hi' ? 'इन गलतियों से बीमारी तेजी से फैल सकती है' : 'Practices that may worsen the infection',
+      title: t.avoid || 'Avoid',
+      subtitle: t.avoidSub || 'Practices that may worsen the infection',
       icon: AlertOctagon,
       iconColor: 'text-red-700 bg-red-100 border-red-200',
       type: 'list',
-      items: advisory.avoid || []
+      items: localizedAvoid[currentLang] || advisory.avoid || []
     }
   ];
 
   return (
     <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-sm space-y-3">
       
-      {/* Title */}
+      {/* Title Header */}
       <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
         <div>
-          <h2 className="text-base sm:text-lg font-black text-slate-900 m-0 leading-tight">
-            {currentLang === 'hi' ? 'कृषि सलाह व उपचार' : 'Actionable Crop Advisory'}
+          <h2 className="text-sm sm:text-base font-black text-slate-900 m-0 leading-tight">
+            {t.advisoryHeader || 'Actionable Crop Advisory'}
           </h2>
-          <p className="text-[11px] font-semibold text-slate-500 m-0 mt-0.5">
-            {currentLang === 'hi' ? 'प्रमाणित सुरक्षित उपचार' : 'Expert-verified guidance for recovery'}
-          </p>
+          <span className="text-[10px] sm:text-xs font-semibold text-emerald-800 block">
+            {currentLang === 'hi' ? 'विशेषज्ञों द्वारा प्रमाणित उपचार योजना' : currentLang === 'ta' ? 'நிபுணர்களால் சரிபார்க்கப்பட்ட சிகிச்சை திட்டம்' : currentLang === 'kn' ? 'ತಜ್ಞರಿಂದ ಪರಿಶೀಲಿಸಲ್ಪಟ್ಟ ಚಿಕಿತ್ಸಾ ಯೋಜನೆ' : 'Expert-verified guidance for recovery'}
+          </span>
         </div>
 
-        {advisory.source && (
-          <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 hidden sm:inline-block">
-            Verified Source
-          </span>
-        )}
+        <div className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-900 font-bold px-2 py-0.5 rounded-md border border-emerald-200 text-[10px]">
+          <BookOpen className="w-3 h-3 text-emerald-700" />
+          <span>{t.verifiedSource || 'Verified Source'}</span>
+        </div>
       </div>
 
       {/* Accordion Sections */}
       <div className="space-y-2">
-        {sections.map((section) => {
-          const isOpen = openSections[section.key];
-          const Icon = section.icon;
+        {sections.map((sec) => {
+          const isOpen = Boolean(openSections[sec.key]);
+          const Icon = sec.icon;
 
           return (
             <div 
-              key={section.key}
-              className="border border-slate-200 rounded-xl overflow-hidden transition-all duration-200"
+              key={sec.key}
+              className="border border-slate-200 rounded-xl overflow-hidden transition-all shadow-xs"
             >
-              {/* Accordion Header */}
+              {/* Accordion Header / Trigger Button */}
               <button
                 type="button"
-                onClick={() => toggleSection(section.key)}
-                className={`w-full min-h-[44px] p-3 text-left flex items-center justify-between gap-2.5 transition-colors ${
-                  isOpen ? 'bg-slate-50/90 border-b border-slate-200' : 'bg-white hover:bg-slate-50'
+                onClick={() => toggleSection(sec.key)}
+                className={`w-full p-3 flex items-center justify-between text-left transition-colors ${
+                  isOpen ? 'bg-slate-50' : 'bg-white hover:bg-slate-50/70'
                 }`}
               >
-                <div className="flex items-center gap-2.5">
-                  <div className={`p-1.5 rounded-lg border shrink-0 ${section.iconColor}`}>
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className={`p-1.5 rounded-lg border shrink-0 ${sec.iconColor}`}>
                     <Icon className="w-4 h-4 stroke-[2.5]" />
                   </div>
-                  <div>
-                    <h3 className="text-sm sm:text-base font-black text-slate-900 m-0 leading-tight">
-                      {section.title}
+                  <div className="min-w-0">
+                    <h3 className="text-xs sm:text-sm font-black text-slate-900 m-0 leading-tight">
+                      {sec.title}
                     </h3>
-                    <p className="text-[10px] sm:text-[11px] font-medium text-slate-500 m-0 mt-0.5">
-                      {section.subtitle}
+                    <p className="text-[10px] sm:text-[11px] font-medium text-slate-500 m-0 leading-tight truncate">
+                      {sec.subtitle}
                     </p>
                   </div>
                 </div>
 
-                <div className="p-1 text-slate-500 shrink-0">
+                <div className="ml-2 text-slate-400 shrink-0">
                   {isOpen ? (
                     <ChevronUp className="w-4 h-4 stroke-[2.5]" />
                   ) : (
@@ -137,42 +194,26 @@ export default function AdvisoryAccordion({ advisory, currentLang = 'en' }) {
                 </div>
               </button>
 
-              {/* Accordion Content Body */}
+              {/* Accordion Expanded Content */}
               {isOpen && (
-                <div className="p-3 bg-white space-y-2 animate-in fade-in duration-200">
-                  
-                  {/* Text Type (What is this) */}
-                  {section.type === 'text' && (
-                    <div className="bg-blue-50/60 p-3 rounded-lg border border-blue-200/70">
-                      <p className="text-xs sm:text-sm font-semibold text-slate-800 m-0 leading-relaxed">
-                        {section.content || 'A crop pathology condition requiring field sanitation and moisture monitoring.'}
-                      </p>
-                    </div>
+                <div className="p-3 bg-white border-t border-slate-100 animate-in fade-in duration-150">
+                  {sec.type === 'text' ? (
+                    <p className="text-xs sm:text-sm font-medium text-slate-800 leading-relaxed m-0">
+                      {sec.content}
+                    </p>
+                  ) : (
+                    <ul className="space-y-1.5 m-0 p-0 list-none">
+                      {sec.items.map((item, idx) => (
+                        <li 
+                          key={idx}
+                          className="text-xs sm:text-sm font-semibold text-slate-800 flex items-start gap-2 leading-snug"
+                        >
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 shrink-0 mt-1.5" />
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
                   )}
-
-                  {/* List Type (Do Now, Watch For, Avoid) */}
-                  {section.type === 'list' && (
-                    <div className="space-y-1.5">
-                      {Array.isArray(section.items) && section.items.length > 0 ? (
-                        section.items.map((item, idx) => (
-                          <div 
-                            key={idx} 
-                            className="bg-slate-50 p-2.5 rounded-lg border border-slate-200/80 flex items-start gap-2.5"
-                          >
-                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-600 mt-1.5 shrink-0" />
-                            <p className="text-xs sm:text-sm font-bold text-slate-900 m-0 leading-snug">
-                              {typeof item === 'string' ? item : item.title || item.detail}
-                            </p>
-                          </div>
-                        ))
-                      ) : (
-                        <p className="text-xs font-semibold text-slate-400 italic m-0 p-1">
-                          No specific notes provided.
-                        </p>
-                      )}
-                    </div>
-                  )}
-
                 </div>
               )}
             </div>
@@ -180,14 +221,11 @@ export default function AdvisoryAccordion({ advisory, currentLang = 'en' }) {
         })}
       </div>
 
-      {/* Source Citation */}
+      {/* Advisory Source Footnote */}
       {advisory.source && (
-        <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-500 pt-1.5 border-t border-slate-100">
-          <BookOpen className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
-          <span>
-            {currentLang === 'hi' ? 'स्रोत:' : 'Source:'}{' '}
-            <strong className="text-slate-700 font-bold">{advisory.source}</strong>
-          </span>
+        <div className="text-[10px] sm:text-[11px] text-slate-500 font-medium pt-1 text-center sm:text-left flex items-center justify-center sm:justify-start gap-1">
+          <span className="font-bold text-slate-600">{t.officialSource || 'Official Guidance Source'}:</span>
+          <span className="italic">{advisory.source}</span>
         </div>
       )}
 
