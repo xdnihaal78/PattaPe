@@ -99,6 +99,22 @@ async def generic_exception_handler(request: Request, exc: Exception):
 
 
 @app.get(
+    "/",
+    tags=["System"],
+    summary="Root API info",
+    include_in_schema=False,
+)
+async def root():
+    return {
+        "app": "PattaPe — Crop Disease Detection API",
+        "status": "online",
+        "docs_url": "/docs",
+        "health_url": "/health",
+        "predict_endpoint": "POST /predict",
+    }
+
+
+@app.get(
     "/health",
     response_model=HealthResponse,
     status_code=status.HTTP_200_OK,
