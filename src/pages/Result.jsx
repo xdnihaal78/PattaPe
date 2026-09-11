@@ -126,6 +126,7 @@ export default function Result({ diagnosis, selectedCrop, uploadedImage, current
       <AudioButton 
         textToRead={voiceAdviceScript} 
         currentLang={currentLang} 
+        diagnosis={diagnosis}
       />
 
       {/* 3. Affected Area Card Component */}

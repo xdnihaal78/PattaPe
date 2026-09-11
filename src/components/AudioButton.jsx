@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Volume2, Square, VolumeX } from 'lucide-react';
 import { speakText, stopSpeech, isSpeechSupported, TRANSLATIONS } from '../utils/helpers';
 
-export default function AudioButton({ textToRead, currentLang = 'en' }) {
+export default function AudioButton({ textToRead, currentLang = 'en', diagnosis = null }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const t = TRANSLATIONS[currentLang] || TRANSLATIONS.en;
 
@@ -38,7 +38,7 @@ export default function AudioButton({ textToRead, currentLang = 'en' }) {
       setIsPlaying(true);
       speakText(textToRead, currentLang, () => {
         setIsPlaying(false);
-      });
+      }, diagnosis);
     }
   };
 

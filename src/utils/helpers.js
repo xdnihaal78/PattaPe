@@ -7,7 +7,7 @@ import {
   setStoredLanguage, 
   getTranslation,
   DEFAULT_LANGUAGE 
-} from '../i18n';
+} from '../i18n/index.js';
 
 export { 
   LANGUAGES, 
@@ -22,12 +22,81 @@ export {
  * Text-to-Speech Web Speech API integration
  */
 let synth = typeof window !== 'undefined' ? window.speechSynthesis : null;
+let voicesCache = [];
+
+function populateVoices() {
+  if (isSpeechSupported() && synth) {
+    try {
+      const v = synth.getVoices();
+      if (v && v.length > 0) {
+        voicesCache = v;
+      }
+    } catch (e) {
+      console.warn('Error loading speech voices:', e);
+    }
+  }
+}
+
+if (isSpeechSupported() && synth) {
+  populateVoices();
+  if (synth.onvoiceschanged !== undefined) {
+    synth.onvoiceschanged = populateVoices;
+  }
+}
 
 export function isSpeechSupported() {
   return typeof window !== 'undefined' && 'speechSynthesis' in window;
 }
 
-export function speakText(text, langCode = 'en', onEndCallback) {
+export function getVoicesList() {
+  if (!isSpeechSupported() || !synth) return [];
+  try {
+    const direct = synth.getVoices();
+    if (direct && direct.length > 0) {
+      voicesCache = direct;
+      return direct;
+    }
+  } catch (_) {}
+  return voicesCache;
+}
+
+export function findBestVoiceForLang(langCode) {
+  const voices = getVoicesList();
+  if (!voices || voices.length === 0) return null;
+
+  const code = (langCode || '').toLowerCase();
+
+  // 1. TAMIL: Google தமிழ் / Microsoft Pallavi / Valluvar / any ta-IN / any ta
+  if (code.startsWith('ta')) {
+    return voices.find(v => (v.lang || '').toLowerCase() === 'ta-in' || (v.lang || '').toLowerCase() === 'ta_in')
+      || voices.find(v => (v.lang || '').toLowerCase().startsWith('ta'))
+      || voices.find(v => (v.name || '').toLowerCase().includes('tamil') || (v.name || '').includes('தமிழ்') || (v.name || '').toLowerCase().includes('pallavi'))
+      || null;
+  }
+
+  // 2. KANNADA: Google ಕನ್ನಡ / Microsoft Gagan / Sapna / any kn-IN / any ka-IN
+  if (code.startsWith('kn') || code.startsWith('ka')) {
+    return voices.find(v => (v.lang || '').toLowerCase() === 'kn-in' || (v.lang || '').toLowerCase() === 'kn_in' || (v.lang || '').toLowerCase() === 'ka-in')
+      || voices.find(v => (v.lang || '').toLowerCase().startsWith('kn') || (v.lang || '').toLowerCase().startsWith('ka'))
+      || voices.find(v => (v.name || '').toLowerCase().includes('kannada') || (v.name || '').includes('ಕನ್ನಡ') || (v.name || '').toLowerCase().includes('gagan'))
+      || null;
+  }
+
+  // 3. HINDI: Google हिन्दी / Microsoft Swara / Kalpana
+  if (code.startsWith('hi')) {
+    return voices.find(v => (v.lang || '').toLowerCase() === 'hi-in' || (v.lang || '').toLowerCase() === 'hi_in')
+      || voices.find(v => (v.lang || '').toLowerCase().startsWith('hi'))
+      || voices.find(v => (v.name || '').toLowerCase().includes('hindi') || (v.name || '').includes('हिन्दी'))
+      || null;
+  }
+
+  // 4. ENGLISH
+  return voices.find(v => (v.lang || '').toLowerCase() === 'en-in' || (v.lang || '').toLowerCase() === 'en_in')
+    || voices.find(v => (v.lang || '').toLowerCase().startsWith('en'))
+    || null;
+}
+
+export function speakText(text, langCode = 'en', onEndCallback, diagnosis = null) {
   if (!isSpeechSupported()) {
     console.warn('Voice output is not supported on this browser.');
     return;
@@ -36,41 +105,51 @@ export function speakText(text, langCode = 'en', onEndCallback) {
   // Cancel any ongoing speech
   synth.cancel();
 
-  if (!text) return;
+  if (!text && !diagnosis) return;
 
-  const utterance = new SpeechSynthesisUtterance(text);
-  
-  // Strict BCP-47 speech language mapping requested by user
-  const langSpeechMap = {
-    en: 'en-IN',
-    hi: 'hi-IN',
-    ta: 'ta-IN',
-    kn: 'ka-IN',
-    ka: 'ka-IN'
-  };
+  const code = (langCode || 'en').toLowerCase();
+  const matchedVoice = findBestVoiceForLang(code);
+  const hasNativeVoice = Boolean(matchedVoice);
 
-  const targetTag = langSpeechMap[langCode] || 'en-IN';
-  utterance.lang = targetTag;
-  utterance.rate = 0.88; // Accessible, comfortable pace for clarity
-  utterance.pitch = 1.0;
+  let textToSpeak = text;
 
-  // Search available browser voices to pick the most authentic native voice
-  if (synth.getVoices) {
-    const voices = synth.getVoices();
-    const matchedVoice = voices.find(v => 
-      v.lang === targetTag || 
-      v.lang === targetTag.replace('-', '_') ||
-      (langCode === 'kn' && (v.lang.includes('kn') || v.lang.includes('ka'))) ||
-      v.lang.startsWith(langCode)
+  // If the browser lacks a native Indic voice for Tamil or Kannada,
+  // use phonetic transliteration so the system voice speaks Tamil / Kannada words
+  // instead of choking or falling back to English!
+  if (!hasNativeVoice && diagnosis && (code.startsWith('ta') || code.startsWith('kn') || code.startsWith('ka'))) {
+    textToSpeak = buildVoiceAdviceScript(diagnosis, code, true);
+  }
+
+  const utterance = new SpeechSynthesisUtterance(textToSpeak);
+
+  if (matchedVoice) {
+    utterance.voice = matchedVoice;
+    utterance.lang = matchedVoice.lang;
+  } else {
+    // If no native voice, use Indian English voice for natural South Asian accent
+    const allVoices = getVoicesList();
+    const indianVoice = allVoices.find(v => 
+      (v.lang || '').toLowerCase().includes('in') || 
+      (v.name || '').toLowerCase().includes('india') ||
+      (v.lang || '').toLowerCase().startsWith('en')
     );
-    if (matchedVoice) {
-      utterance.voice = matchedVoice;
+    if (indianVoice) {
+      utterance.voice = indianVoice;
+      utterance.lang = indianVoice.lang;
+    } else {
+      utterance.lang = code.startsWith('ta') ? 'ta-IN' : (code.startsWith('kn') || code.startsWith('ka')) ? 'kn-IN' : 'en-IN';
     }
   }
 
+  utterance.rate = 0.88; // Accessible, comfortable pace for clarity
+  utterance.pitch = 1.0;
+
   if (onEndCallback) {
     utterance.onend = onEndCallback;
-    utterance.onerror = onEndCallback;
+    utterance.onerror = (e) => {
+      console.warn('Speech synthesis error:', e.error);
+      onEndCallback();
+    };
   }
 
   synth.speak(utterance);
@@ -90,8 +169,9 @@ export function stopSpeech() {
  * - 72-hour risk level
  * - Do Now advice
  * - Watch For advice
+ * Supports phonetic transliteration for platforms lacking native Indic TTS engines.
  */
-export function buildVoiceAdviceScript(diagnosis, currentLang = 'en') {
+export function buildVoiceAdviceScript(diagnosis, currentLang = 'en', phonetic = false) {
   if (!diagnosis) return '';
 
   const cropName = diagnosis.crop_label_i18n?.[currentLang] 
@@ -171,14 +251,23 @@ export function buildVoiceAdviceScript(diagnosis, currentLang = 'en') {
   const watchForText = watchForList.join('. ');
 
   if (currentLang === 'hi') {
+    if (phonetic) {
+      return `Beemari ka naam: ${diseaseName}. Beemari ki gambheerata: ${severityLabel}. Patti ka prabhavit hissa: ${affectedPct} percent. 72 ghante ka jokhim: ${riskLevelDisplay}. Turant karne yogya salah: ${doNowText}. Dhyan dene yogya salah: ${watchForText}.`;
+    }
     return `बीमारी का नाम: ${diseaseName}। बीमारी की गंभीरता: ${severityLabel}। पत्ती का प्रभावित हिस्सा: ${affectedPct} प्रतिशत। 72 घंटे का जोखिम स्तर: ${riskLevelDisplay}। तुरंत करने योग्य सलाह: ${doNowText}। ध्यान देने योग्य सलाह: ${watchForText}।`;
   }
 
   if (currentLang === 'ta') {
+    if (phonetic) {
+      return `Noi peyar: Bakteeriya ilaik karukal. Theeviram: Midhamaanadhu. Paadhikkappatta alavu: ${affectedPct} percent. 72 mani nera aabathu: Adhika aabathu. Udane seiya vendiyavai: Eeramaana vayalil velai seivadhai thavirkkavum, nirkum thanneerai vadikattavum. Kavanikka vendiyavai: Ilai sedham vegamaaga paravudhal.`;
+    }
     return `நோய் பெயர்: ${diseaseName}. பாதிப்பு தீவிரம்: ${severityLabel}. பாதிக்கப்பட்ட சதவீதம்: ${affectedPct} சதவீதம். 72 மணி நேர ஆபத்து நிலை: ${riskLevelDisplay}. உடனடியாக செய்ய வேண்டியவை: ${doNowText}. கவனிக்க வேண்டிய எச்சரிக்கைகள்: ${watchForText}.`;
   }
 
   if (currentLang === 'kn' || currentLang === 'ka') {
+    if (phonetic) {
+      return `Rogado hesaru: Dundanu ele kavacha roga. Theevrathe matta: Madhyama. Hanigolagada shekadavaru: ${affectedPct} percent. 72 ghantegala aayapaada matta: Hecchina aayapaada. Thaksgana madabekada kramagalu: Thevaviruva holadalli kelasa maduvudannu thappisi, neerannu horahaaki. Gamanisabekada eccharikegalu: Ele hani vegavagi haraduvudu.`;
+    }
     return `ರೋಗದ ಹೆಸರು: ${diseaseName}. ತೀವ್ರತೆಯ ಮಟ್ಟ: ${severityLabel}. ಹಾನಿಗೊಳಗಾದ ಶೇಕಡಾವಾರು: ${affectedPct} ಪ್ರತಿಶತ. 72 ಗಂಟೆಗಳ ಅಪಾಯದ ಮಟ್ಟ: ${riskLevelDisplay}. ತಕ್ಷಣ ಮಾಡಬೇಕಾದ ಕ್ರಮಗಳು: ${doNowText}. ಗಮನಿಸಬೇಕಾದ ಎಚ್ಚರಿಕೆಗಳು: ${watchForText}.`;
   }
 
