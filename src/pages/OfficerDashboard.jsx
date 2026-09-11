@@ -212,7 +212,7 @@ export default function OfficerDashboard() {
         />
 
         {/* Chart 2: Cases Over Time */}
-        <CasesOverTimeChart />
+        <CasesOverTimeChart cases={cases} />
 
       </section>
 
