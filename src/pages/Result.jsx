@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   FileText, 
@@ -21,7 +21,7 @@ import AdvisoryAccordion from '../components/AdvisoryAccordion';
 import AudioButton from '../components/AudioButton';
 import FarmerErrorState from '../components/FarmerErrorState';
 import { escalateToOfficer } from '../services/api';
-import { TRANSLATIONS } from '../utils/helpers';
+import { TRANSLATIONS, buildVoiceAdviceScript, stopSpeech } from '../utils/helpers';
 
 export default function Result({ diagnosis, selectedCrop, uploadedImage, currentLang = 'en' }) {
   const navigate = useNavigate();
@@ -29,6 +29,13 @@ export default function Result({ diagnosis, selectedCrop, uploadedImage, current
   const [escalatedTicket, setEscalatedTicket] = useState(null);
   const [isSubmittingEscalation, setIsSubmittingEscalation] = useState(false);
   const t = TRANSLATIONS[currentLang] || TRANSLATIONS.en;
+
+  // Cleanup speech synthesis when leaving Result page
+  useEffect(() => {
+    return () => {
+      stopSpeech();
+    };
+  }, []);
 
   if (!diagnosis) {
     return (
@@ -43,40 +50,8 @@ export default function Result({ diagnosis, selectedCrop, uploadedImage, current
     );
   }
 
-  // Titles for audio voice read
-  const cropTitle = diagnosis.crop_label_i18n?.[currentLang] 
-    || diagnosis.crop_label_i18n?.en 
-    || selectedCrop?.names_i18n?.[currentLang]
-    || selectedCrop?.name
-    || diagnosis.cropName 
-    || diagnosis.crop 
-    || 'Rice';
-
-  const diseaseTitle = diagnosis.disease_label_i18n?.[currentLang] 
-    || diagnosis.disease_label_i18n?.en 
-    || diagnosis.diseaseName 
-    || diagnosis.disease 
-    || 'Crop Disease';
-
-  const primaryAction = diagnosis.advisory?.do_now?.[0] || diagnosis.advisory?.chemical?.[0]?.detail || '';
-  const riskLevel = diagnosis.risk_72h?.level || diagnosis.weatherRisk?.level || 'Moderate';
-
-  // Construct TTS read string (synthesizes gemini.farmer_explanation or advisory summary)
-  const speechText = diagnosis.gemini?.farmer_explanation
-    ? (currentLang === 'hi'
-        ? `फसल ${cropTitle}। एआई रिपोर्ट: ${diagnosis.gemini.farmer_explanation}। मुख्य सलाह: ${primaryAction}`
-        : currentLang === 'ta'
-        ? `பயிர் ${cropTitle}. AI அறிக்கை: ${diagnosis.gemini.farmer_explanation}. உடனடி ஆலோசனை: ${primaryAction}`
-        : currentLang === 'kn'
-        ? `ಬೆಳೆ ${cropTitle}. AI ವರದಿ: ${diagnosis.gemini.farmer_explanation}. ತಕ್ಷಣದ ಸಲಹೆ: ${primaryAction}`
-        : `Crop ${cropTitle}. AI Report: ${diagnosis.gemini.farmer_explanation} Immediate advice: ${primaryAction}`)
-    : (currentLang === 'hi'
-        ? `आपकी फसल ${cropTitle} में बीमारी ${diseaseTitle} पाई गई है। बीमारी का स्तर ${diagnosis.severity} है। 72 घंटे में फैलने का खतरा ${riskLevel} है। मुख्य उपाय: ${primaryAction}`
-        : currentLang === 'ta'
-        ? `உங்கள் பயிர் ${cropTitle}ல் ${diseaseTitle} நோய் கண்டறியப்பட்டுள்ளது. ஆபத்து நிலை ${riskLevel}. உடனடி நடவடிக்கை: ${primaryAction}`
-        : currentLang === 'kn'
-        ? `ನಿಮ್ಮ ಬೆಳೆ ${cropTitle}ನಲ್ಲಿ ${diseaseTitle} ರೋಗ ಪತ್ತೆಯಾಗಿದೆ. ಹರಡುವ ಅಪಾಯ ${riskLevel}. ತಕ್ಷಣದ ಕ್ರಮ: ${primaryAction}`
-        : `Diagnosis for ${cropTitle}: ${diseaseTitle}. Severity is ${diagnosis.severity}. 72-hour spread risk is ${riskLevel}. Immediate advice: ${primaryAction}`);
+  // Voice output text covering: Disease name, Severity, Affected percentage, 72-hour risk level, Do Now advice, Watch For advice
+  const voiceAdviceScript = buildVoiceAdviceScript(diagnosis, currentLang);
 
   const handleEscalateSubmit = async () => {
     setIsSubmittingEscalation(true);
@@ -149,7 +124,7 @@ export default function Result({ diagnosis, selectedCrop, uploadedImage, current
 
       {/* Voice Audio Listen Button */}
       <AudioButton 
-        textToRead={speechText} 
+        textToRead={voiceAdviceScript} 
         currentLang={currentLang} 
       />
 

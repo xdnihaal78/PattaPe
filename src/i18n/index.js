@@ -4,10 +4,14 @@ export const LANGUAGES = [
   { code: 'en', label: 'English', nativeLabel: 'English', speechLang: 'en-IN' },
   { code: 'hi', label: 'हिन्दी', nativeLabel: 'हिन्दी (Hindi)', speechLang: 'hi-IN' },
   { code: 'ta', label: 'தமிழ்', nativeLabel: 'தமிழ் (Tamil)', speechLang: 'ta-IN' },
-  { code: 'kn', label: 'ಕನ್ನಡ', nativeLabel: 'ಕನ್ನಡ (Kannada)', speechLang: 'kn-IN' }
+  { code: 'kn', label: 'ಕನ್ನಡ', nativeLabel: 'ಕನ್ನಡ (Kannada)', speechLang: 'ka-IN' }
 ];
 
 export const DEFAULT_LANGUAGE = 'en';
+
+if (translationsData && translationsData.kn && !translationsData.ka) {
+  translationsData.ka = translationsData.kn;
+}
 
 export const TRANSLATIONS = translationsData;
 

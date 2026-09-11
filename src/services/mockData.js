@@ -8,7 +8,8 @@ export const MOCK_PREDICTION_RESPONSE = {
     en: "Rice",
     hi: "धान",
     ta: "நெல்",
-    kn: "ಭತ್ತ"
+    kn: "ಭತ್ತ",
+    ka: "ಭತ್ತ"
   },
 
   disease: "bacterial_leaf_blight",
@@ -17,7 +18,8 @@ export const MOCK_PREDICTION_RESPONSE = {
     en: "Bacterial Leaf Blight",
     hi: "जीवाणु पत्ती झुलसा",
     ta: "பாக்டீரியா இலைக்கருகல்",
-    kn: "ದುಂಡಾಣು ಎಲೆ ಕವಚ ರೋಗ"
+    kn: "ದುಂಡಾಣು ಎಲೆ ಕವಚ ರೋಗ",
+    ka: "ದುಂಡಾಣು ಎಲೆ ಕವಚ ರೋಗ"
   },
 
   confidence: 0.94,
@@ -108,7 +110,8 @@ export const MOCK_CROPS = [
       en: 'Rice',
       hi: 'धान',
       ta: 'நெல்',
-      kn: 'ಭತ್ತ'
+      kn: 'ಭತ್ತ',
+      ka: 'ಭತ್ತ'
     },
     localName: 'धान (Rice)',
     icon: '🌾',
@@ -123,7 +126,8 @@ export const MOCK_CROPS = [
       en: 'Chilli',
       hi: 'मिर्च',
       ta: 'மிளகாய்',
-      kn: 'ಮೆಣಸಿನಕಾಯಿ'
+      kn: 'ಮೆಣಸಿನಕಾಯಿ',
+      ka: 'ಮೆಣಸಿನಕಾಯಿ'
     },
     localName: 'मिर्च (Chilli)',
     icon: '🌶️',
@@ -138,7 +142,8 @@ export const MOCK_CROPS = [
       en: 'Banana',
       hi: 'केला',
       ta: 'வாழை',
-      kn: 'ಬಾಳೆ'
+      kn: 'ಬಾಳೆ',
+      ka: 'ಬಾಳೆ'
     },
     localName: 'केला (Banana)',
     icon: '🍌',
@@ -153,7 +158,8 @@ export const MOCK_CROPS = [
       en: 'Groundnut',
       hi: 'मूंगफली',
       ta: 'நிலக்கடலை',
-      kn: 'ಕಡಲೆಕಾಯಿ'
+      kn: 'ಕಡಲೆಕಾಯಿ',
+      ka: 'ಕಡಲೆಕಾಯಿ'
     },
     localName: 'मूंगफली (Groundnut)',
     icon: '🥜',
@@ -168,7 +174,8 @@ export const MOCK_CROPS = [
       en: 'Sugarcane',
       hi: 'गन्ना',
       ta: 'கரும்பு',
-      kn: 'ಕಬ್ಬು'
+      kn: 'ಕಬ್ಬು',
+      ka: 'ಕಬ್ಬು'
     },
     localName: 'गन्ना (Sugarcane)',
     icon: '🎋',
