@@ -8,6 +8,7 @@ import FieldStatsCards from '../components/officer/FieldStatsCards';
 import CropDistributionChart from '../components/officer/CropDistributionChart';
 import CasesOverTimeChart from '../components/officer/CasesOverTimeChart';
 import OfficerCaseTable from '../components/officer/OfficerCaseTable';
+import VillageOverviewTable from '../components/officer/VillageOverviewTable';
 import { RefreshCw, RotateCcw, Activity } from 'lucide-react';
 
 export default function OfficerDashboard() {
@@ -217,9 +218,28 @@ export default function OfficerDashboard() {
       </section>
 
       {/* ======================================================== */}
-      {/* 4. RECENT DIAGNOSIS CASES (Preview Table & Filters) */}
+      {/* 4. VILLAGE OVERVIEW TABLE (Grouped by Village)          */}
       {/* ======================================================== */}
-      <section aria-label="Recent Diagnosis Cases">
+      <section id="village-overview-section" aria-label="Village Surveillance Overview">
+        <VillageOverviewTable
+          cases={cases}
+          selectedVillage={selectedVillage}
+          onSelectVillage={(v) => {
+            if (selectedVillage.toLowerCase() === v.toLowerCase()) {
+              setSelectedVillage('all');
+            } else {
+              setSelectedVillage(v);
+              const elem = document.getElementById('cases-section');
+              if (elem) elem.scrollIntoView({ behavior: 'smooth' });
+            }
+          }}
+        />
+      </section>
+
+      {/* ======================================================== */}
+      {/* 5. RECENT DIAGNOSIS CASES (Preview Table & Filters) */}
+      {/* ======================================================== */}
+      <section id="cases-section" aria-label="Recent Diagnosis Cases">
         <OfficerCaseTable
           cases={filteredCases}
           searchTerm={searchTerm}
