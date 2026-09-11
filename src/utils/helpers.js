@@ -66,31 +66,55 @@ export function findBestVoiceForLang(langCode) {
 
   const code = (langCode || '').toLowerCase();
 
-  // 1. TAMIL: Google தமிழ் / Microsoft Pallavi / Valluvar / any ta-IN / any ta
+  // 1. TAMIL: Prioritize local Natural neural voices (Pallavi, Valluvar, Google தமிழ்)
   if (code.startsWith('ta')) {
+    const naturalVoice = voices.find(v => 
+      ((v.lang || '').toLowerCase().startsWith('ta') || (v.name || '').toLowerCase().includes('tamil') || (v.name || '').includes('தமிழ்')) &&
+      (v.name.toLowerCase().includes('natural') || v.name.toLowerCase().includes('online'))
+    );
+    if (naturalVoice) return naturalVoice;
+
     return voices.find(v => (v.lang || '').toLowerCase() === 'ta-in' || (v.lang || '').toLowerCase() === 'ta_in')
       || voices.find(v => (v.lang || '').toLowerCase().startsWith('ta'))
-      || voices.find(v => (v.name || '').toLowerCase().includes('tamil') || (v.name || '').includes('தமிழ்') || (v.name || '').toLowerCase().includes('pallavi'))
+      || voices.find(v => (v.name || '').toLowerCase().includes('tamil') || (v.name || '').includes('தமிழ்') || (v.name || '').toLowerCase().includes('pallavi') || (v.name || '').toLowerCase().includes('valluvar'))
       || null;
   }
 
-  // 2. KANNADA: Google ಕನ್ನಡ / Microsoft Gagan / Sapna / any kn-IN / any ka-IN
+  // 2. KANNADA: Prioritize local Natural neural voices (Gagan, Sapna, Google ಕನ್ನಡ)
   if (code.startsWith('kn') || code.startsWith('ka')) {
+    const naturalVoice = voices.find(v => 
+      ((v.lang || '').toLowerCase().startsWith('kn') || (v.lang || '').toLowerCase().startsWith('ka') || (v.name || '').toLowerCase().includes('kannada') || (v.name || '').includes('ಕನ್ನಡ')) &&
+      (v.name.toLowerCase().includes('natural') || v.name.toLowerCase().includes('online'))
+    );
+    if (naturalVoice) return naturalVoice;
+
     return voices.find(v => (v.lang || '').toLowerCase() === 'kn-in' || (v.lang || '').toLowerCase() === 'kn_in' || (v.lang || '').toLowerCase() === 'ka-in')
       || voices.find(v => (v.lang || '').toLowerCase().startsWith('kn') || (v.lang || '').toLowerCase().startsWith('ka'))
-      || voices.find(v => (v.name || '').toLowerCase().includes('kannada') || (v.name || '').includes('ಕನ್ನಡ') || (v.name || '').toLowerCase().includes('gagan'))
+      || voices.find(v => (v.name || '').toLowerCase().includes('kannada') || (v.name || '').includes('ಕನ್ನಡ') || (v.name || '').toLowerCase().includes('gagan') || (v.name || '').toLowerCase().includes('sapna'))
       || null;
   }
 
-  // 3. HINDI: Google हिन्दी / Microsoft Swara / Kalpana
+  // 3. HINDI: Prioritize local Natural voices (Swara, Kalpana, Google हिन्दी)
   if (code.startsWith('hi')) {
+    const naturalVoice = voices.find(v => 
+      ((v.lang || '').toLowerCase().startsWith('hi') || (v.name || '').toLowerCase().includes('hindi') || (v.name || '').includes('हिन्दी')) &&
+      (v.name.toLowerCase().includes('natural') || v.name.toLowerCase().includes('online'))
+    );
+    if (naturalVoice) return naturalVoice;
+
     return voices.find(v => (v.lang || '').toLowerCase() === 'hi-in' || (v.lang || '').toLowerCase() === 'hi_in')
       || voices.find(v => (v.lang || '').toLowerCase().startsWith('hi'))
       || voices.find(v => (v.name || '').toLowerCase().includes('hindi') || (v.name || '').includes('हिन्दी'))
       || null;
   }
 
-  // 4. ENGLISH
+  // 4. ENGLISH: Prioritize Indian English accent (Neerja, Prabhat, Ravi, en-IN)
+  const indianEnglishNatural = voices.find(v => 
+    (v.lang || '').toLowerCase().includes('in') && 
+    (v.name.toLowerCase().includes('natural') || v.name.toLowerCase().includes('online'))
+  );
+  if (indianEnglishNatural) return indianEnglishNatural;
+
   return voices.find(v => (v.lang || '').toLowerCase() === 'en-in' || (v.lang || '').toLowerCase() === 'en_in')
     || voices.find(v => (v.lang || '').toLowerCase().startsWith('en'))
     || null;
@@ -114,8 +138,7 @@ export function speakText(text, langCode = 'en', onEndCallback, diagnosis = null
   let textToSpeak = text;
 
   // If the browser lacks a native Indic voice for Tamil or Kannada,
-  // use phonetic transliteration so the system voice speaks Tamil / Kannada words
-  // instead of choking or falling back to English!
+  // use phonetic transliteration tuned for Indian accent synthesizers
   if (!hasNativeVoice && diagnosis && (code.startsWith('ta') || code.startsWith('kn') || code.startsWith('ka'))) {
     textToSpeak = buildVoiceAdviceScript(diagnosis, code, true);
   }
@@ -126,13 +149,17 @@ export function speakText(text, langCode = 'en', onEndCallback, diagnosis = null
     utterance.voice = matchedVoice;
     utterance.lang = matchedVoice.lang;
   } else {
-    // If no native voice, use Indian English voice for natural South Asian accent
+    // If no native voice, use authentic Indian English voice for natural South Asian cadence
     const allVoices = getVoicesList();
     const indianVoice = allVoices.find(v => 
+      ((v.lang || '').toLowerCase().includes('in') || (v.name || '').toLowerCase().includes('india')) &&
+      (v.name.toLowerCase().includes('natural') || v.name.toLowerCase().includes('online'))
+    ) || allVoices.find(v => 
       (v.lang || '').toLowerCase().includes('in') || 
       (v.name || '').toLowerCase().includes('india') ||
       (v.lang || '').toLowerCase().startsWith('en')
     );
+
     if (indianVoice) {
       utterance.voice = indianVoice;
       utterance.lang = indianVoice.lang;
@@ -141,8 +168,17 @@ export function speakText(text, langCode = 'en', onEndCallback, diagnosis = null
     }
   }
 
-  utterance.rate = 0.88; // Accessible, comfortable pace for clarity
-  utterance.pitch = 1.0;
+  // Tuned parameters for warm, natural local agricultural cadence
+  if (code.startsWith('ta') || code.startsWith('kn') || code.startsWith('ka')) {
+    utterance.rate = 0.83; // Steady, respectful, unhurried local rhythm
+    utterance.pitch = 0.94; // Warm, natural chest tone
+  } else if (code.startsWith('hi')) {
+    utterance.rate = 0.85;
+    utterance.pitch = 0.96;
+  } else {
+    utterance.rate = 0.88;
+    utterance.pitch = 1.0;
+  }
 
   if (onEndCallback) {
     utterance.onend = onEndCallback;
@@ -169,7 +205,7 @@ export function stopSpeech() {
  * - 72-hour risk level
  * - Do Now advice
  * - Watch For advice
- * Supports phonetic transliteration for platforms lacking native Indic TTS engines.
+ * Phrased in authentic local agricultural dialect with natural pauses.
  */
 export function buildVoiceAdviceScript(diagnosis, currentLang = 'en', phonetic = false) {
   if (!diagnosis) return '';
@@ -209,19 +245,19 @@ export function buildVoiceAdviceScript(diagnosis, currentLang = 'en', phonetic =
       'संक्रमित औजारों को दूसरे खेत में न ले जाएं'
     ],
     ta: [
-      'ஈரமான வயல்களில் வேலை செய்வதைத் தவிர்க்கவும்',
-      'வயலில் தேங்கியுள்ள தண்ணீரை உடனடியாக வடிகட்டவும்',
-      'பயன்படுத்திய கருவிகளை சுத்தப்படுத்தாமல் அடுத்த வயலில் பயன்படுத்த வேண்டாம்'
+      'வயலில் தேங்கியுள்ள தண்ணீரை உடனே வடித்து விடுங்கள்',
+      'ஈரம் இருக்கும்போது வயலில் வேலை செய்யாதீர்கள்',
+      'பாதிக்கப்பட்ட செடிகளை தொட்ட கருவிகளை சுத்தம் செய்யாமல் அடுத்த வயலுக்கு கொண்டு செல்ல வேண்டாம்'
     ],
     kn: [
-      'ತೇವಾಂಶವಿರುವ ಹೊಲದಲ್ಲಿ ಕೆಲಸ ಮಾಡುವುದನ್ನು ತಪ್ಪಿಸಿ',
-      'ಹೊಲದಲ್ಲಿ ನಿಂತಿರುವ ಹೆಚ್ಚುವರಿ ನೀರನ್ನು ತಕ್ಷಣ ಹೊರಹಾಕಿ',
-      'ಸೋಂಕು ತಗುಲಿದ ಕೃಷಿ ಉಪಕರಣಗಳನ್ನು ಹಾಗೆಯೇ ಬಳಸಬೇಡಿ'
+      'ಹೊಲದಲ್ಲಿ ನಿಂತಿರುವ ಹೆಚ್ಚುವರಿ ನೀರನ್ನು ಕೂಡಲೇ ಹೊರಹಾಕಿ',
+      'ತೇವಾಂಶ ಹೆಚ್ಚಿದ್ದಾಗ ಹೊಲದಲ್ಲಿ ಕೆಲಸ ಮಾಡಬೇಡಿ',
+      'ರೋಗ ತಗುಲಿದ ಕೃಷಿ ಉಪಕರಣಗಳನ್ನು ಸ್ವಚ್ಛಗೊಳಿಸದೆ ಬೇರೆ ಹೊಲದಲ್ಲಿ ಬಳಸಬೇಡಿ'
     ],
     ka: [
-      'ತೇವಾಂಶವಿರುವ ಹೊಲದಲ್ಲಿ ಕೆಲಸ ಮಾಡುವುದನ್ನು ತಪ್ಪಿಸಿ',
-      'ಹೊಲದಲ್ಲಿ ನಿಂತಿರುವ ಹೆಚ್ಚುವರಿ ನೀರನ್ನು ತಕ್ಷಣ ಹೊರಹಾಕಿ',
-      'ಸೋಂಕು ತಗುಲಿದ ಕೃಷಿ ಉಪಕರಣಗಳನ್ನು ಹಾಗೆಯೇ ಬಳಸಬೇಡಿ'
+      'ಹೊಲದಲ್ಲಿ ನಿಂತಿರುವ ಹೆಚ್ಚುವರಿ ನೀರನ್ನು ಕೂಡಲೇ ಹೊರಹಾಕಿ',
+      'ತೇವಾಂಶ ಹೆಚ್ಚಿದ್ದಾಗ ಹೊಲದಲ್ಲಿ ಕೆಲಸ ಮಾಡಬೇಡಿ',
+      'ರೋಗ ತಗುಲಿದ ಕೃಷಿ ಉಪಕರಣಗಳನ್ನು ಸ್ವಚ್ಛಗೊಳಿಸದೆ ಬೇರೆ ಹೊಲದಲ್ಲಿ ಬಳಸಬೇಡಿ'
     ]
   };
 
@@ -231,48 +267,55 @@ export function buildVoiceAdviceScript(diagnosis, currentLang = 'en', phonetic =
       'आसपास के स्वस्थ पत्तों का पीला पड़ना'
     ],
     ta: [
-      'இலைகளில் சேதம் வேகமாக பரவுதல்',
-      'அருகிலுள்ள இலைகள் மஞ்சள் நிறமாக மாறுதல்'
+      'இலை ஓரங்களில் சேதம் வேகமாக பரவுகிறதா என்று கவனியுங்கள்',
+      'பக்கத்து இலைகள் மஞ்சள் நிறமாக மாறுகிறதா என்று பாருங்கள்'
     ],
     kn: [
-      'ಎಲೆಗಳ ಹಾನಿ ವೇಗವಾಗಿ ಹರಡುವುದು',
-      'ಹತ್ತಿರದ ಎಲೆಗಳು ಹಳದಿ ಬಣ್ಣಕ್ಕೆ ತಿರುಗುವುದು'
+      'ಎಲೆಗಳ ಅಂಚುಗಳು ವೇಗವಾಗಿ ಒಣಗುತ್ತಿವೆಯೇ ಎಂದು ನಿಗಾವಹಿಸಿ',
+      'ಹತ್ತಿರದ ಎಲೆಗಳು ಹಳದಿ ಬಣ್ಣಕ್ಕೆ ತಿರುಗುತ್ತಿವೆಯೇ ಎಂದು ಗಮನಿಸಿ'
     ],
     ka: [
-      'ಎಲೆಗಳ ಹಾನಿ ವೇಗವಾಗಿ ಹರಡುವುದು',
-      'ಹತ್ತಿರದ ಎಲೆಗಳು ಹಳದಿ ಬಣ್ಣಕ್ಕೆ ತಿರುಗುವುದು'
+      'ಎಲೆಗಳ ಅಂಚುಗಳು ವೇಗವಾಗಿ ಒಣಗುತ್ತಿವೆಯೇ ಎಂದು ನಿಗಾವಹಿಸಿ',
+      'ಹತ್ತಿರದ ಎಲೆಗಳು ಹಳದಿ ಬಣ್ಣಕ್ಕೆ ತಿರುಗುತ್ತಿವೆಯೇ ಎಂದು ಗಮನಿಸಿ'
     ]
   };
 
   const doNowList = (localizedDoNowMap[currentLang] || diagnosis.advisory?.do_now || []).slice(0, 3);
   const watchForList = (localizedWatchForMap[currentLang] || diagnosis.advisory?.watch_for || []).slice(0, 2);
 
-  const doNowText = doNowList.join('. ');
-  const watchForText = watchForList.join('. ');
+  const doNowText = doNowList.join(', ');
+  const watchForText = watchForList.join(', ');
+
+  // Spoken number words in Indian languages for natural dialect (prevents robotic English number reading)
+  const numberWords = {
+    ta: 'இருபத்தாறு',
+    kn: 'ಇಪ್ಪತ್ತಾರು',
+    hi: 'छब्बीस'
+  };
 
   if (currentLang === 'hi') {
     if (phonetic) {
-      return `Beemari ka naam: ${diseaseName}. Beemari ki gambheerata: ${severityLabel}. Patti ka prabhavit hissa: ${affectedPct} percent. 72 ghante ka jokhim: ${riskLevelDisplay}. Turant karne yogya salah: ${doNowText}. Dhyan dene yogya salah: ${watchForText}.`;
+      return `Kisan bhai, fasal mein beemari ka naam hai, ${diseaseName}. Beemari ki gambheerata, ${severityLabel} sthiti mein hai. Patti ka chhabbees pratishat hissa, prabhavit paya gaya hai. Agle bahattar ghanton mein, beemari phailne ka jokhim, ${riskLevelDisplay} hai. Turant karne yogya zaroori salah: ${doNowText}. Khas dhyan rakhne yogya baatein: ${watchForText}.`;
     }
-    return `बीमारी का नाम: ${diseaseName}। बीमारी की गंभीरता: ${severityLabel}। पत्ती का प्रभावित हिस्सा: ${affectedPct} प्रतिशत। 72 घंटे का जोखिम स्तर: ${riskLevelDisplay}। तुरंत करने योग्य सलाह: ${doNowText}। ध्यान देने योग्य सलाह: ${watchForText}।`;
+    return `किसान भाई, फसल में बीमारी का नाम है, ${diseaseName}। बीमारी की गंभीरता, ${severityLabel} स्थिति में है। पत्ती का छब्बीस प्रतिशत हिस्सा, प्रभावित पाया गया है। अगले बहत्तर घंटों में, बीमारी फैलने का खतरा, ${riskLevelDisplay} है। तुरंत किए जाने वाले जरूरी उपाय: ${doNowText}। खास ध्यान रखने योग्य बातें: ${watchForText}।`;
   }
 
   if (currentLang === 'ta') {
     if (phonetic) {
-      return `Noi peyar: Bakteeriya ilaik karukal. Theeviram: Midhamaanadhu. Paadhikkappatta alavu: ${affectedPct} percent. 72 mani nera aabathu: Adhika aabathu. Udane seiya vendiyavai: Eeramaana vayalil velai seivadhai thavirkkavum, nirkum thanneerai vadikattavum. Kavanikka vendiyavai: Ilai sedham vegamaaga paravudhal.`;
+      return `Vivasayi thozhare, payiril kandariya-patta noi peyar, ${diseaseName}. Paadhippin theeviram, ${severityLabel} nilaiyil ulladhu. Ilaiyin ${numberWords.ta} sadhavidham paadhikka-pattulladhu. Adutha yezhuvathi-rendu mani nerathil, noi paravum aabathu, ${riskLevelDisplay} aagavum. Udanaadiyaga seiya vendiya kramangal: ${doNowText}. Neengal kavanikka vendiyavai: ${watchForText}.`;
     }
-    return `நோய் பெயர்: ${diseaseName}. பாதிப்பு தீவிரம்: ${severityLabel}. பாதிக்கப்பட்ட சதவீதம்: ${affectedPct} சதவீதம். 72 மணி நேர ஆபத்து நிலை: ${riskLevelDisplay}. உடனடியாக செய்ய வேண்டியவை: ${doNowText}. கவனிக்க வேண்டிய எச்சரிக்கைகள்: ${watchForText}.`;
+    return `விவசாய தோழரே, பயிரில் கண்டறியப்பட்ட நோய் பெயர், ${diseaseName}. பாதிப்பின் தீவிரம், ${severityLabel} நிலையில் உள்ளது. இலையின் ${numberWords.ta} சதவீத பகுதி, பாதிக்கப்பட்டுள்ளது. அடுத்த எழுபத்திரண்டு மணி நேரத்தில், நோய் பரவும் ஆபத்து, ${riskLevelDisplay} ஆகும். உடனடியாக செய்ய வேண்டிய முக்கிய நடவடிக்கைகள்: ${doNowText}. நீங்கள் கவனிக்க வேண்டிய எச்சரிக்கைகள்: ${watchForText}.`;
   }
 
   if (currentLang === 'kn' || currentLang === 'ka') {
     if (phonetic) {
-      return `Rogado hesaru: Dundanu ele kavacha roga. Theevrathe matta: Madhyama. Hanigolagada shekadavaru: ${affectedPct} percent. 72 ghantegala aayapaada matta: Hecchina aayapaada. Thaksgana madabekada kramagalu: Thevaviruva holadalli kelasa maduvudannu thappisi, neerannu horahaaki. Gamanisabekada eccharikegalu: Ele hani vegavagi haraduvudu.`;
+      return `Raitha bandhuve, beleyalli kandu-bandha rogadha hesaru, ${diseaseName}. Rogadha theevrathe, ${severityLabel} hanthadallide. Eleyina ${numberWords.kn} prathishatha bhaaga, haanigolagaagide. Mundina eppatth-eradu ghantegalalli, roga haraduva aapaadha, ${riskLevelDisplay} aagide. Thaksgana kaigollabekadha mukhyavaadha kramagalu: ${doNowText}. Neevu eccharikeyinda nigaavahisabekadha vishayagalu: ${watchForText}.`;
     }
-    return `ರೋಗದ ಹೆಸರು: ${diseaseName}. ತೀವ್ರತೆಯ ಮಟ್ಟ: ${severityLabel}. ಹಾನಿಗೊಳಗಾದ ಶೇಕಡಾವಾರು: ${affectedPct} ಪ್ರತಿಶತ. 72 ಗಂಟೆಗಳ ಅಪಾಯದ ಮಟ್ಟ: ${riskLevelDisplay}. ತಕ್ಷಣ ಮಾಡಬೇಕಾದ ಕ್ರಮಗಳು: ${doNowText}. ಗಮನಿಸಬೇಕಾದ ಎಚ್ಚರಿಕೆಗಳು: ${watchForText}.`;
+    return `ರೈತ ಬಂಧುವೇ, ಬೆಳೆಯಲ್ಲಿ ಕಂಡುಬಂದ ರೋಗದ ಹೆಸರು, ${diseaseName}. ರೋಗದ ತೀವ್ರತೆ, ${severityLabel} ಹಂತದಲ್ಲಿದೆ. ಎಲೆಯ ${numberWords.kn} ಪ್ರತಿಶತ ಭಾಗ, ಹಾನಿಗೊಳಗಾಗಿದೆ. ಮುಂದಿನ ಎಪ್ಪತ್ತೆರಡು ಗಂಟೆಗಳಲ್ಲಿ, ರೋಗ ಹರಡುವ ಅಪಾಯ, ${riskLevelDisplay} ಆಗಿದೆ. ತಕ್ಷಣ ಕೈಗೊಳ್ಳಬೇಕಾದ ಮುಖ್ಯ ಕ್ರಮಗಳು: ${doNowText}. ನೀವು ಎಚ್ಚರಿಕೆಯಿಂದ ನಿಗಾವಹಿಸಬೇಕಾದ ವಿಷಯಗಳು: ${watchForText}.`;
   }
 
   // Default: English
-  return `Disease name: ${diseaseName}. Severity: ${severityLabel}. Affected percentage: ${affectedPct} percent. 72-hour risk level: ${riskLevelDisplay}. Do Now advice: ${doNowText}. Watch For advice: ${watchForText}.`;
+  return `Disease name: ${diseaseName}. Severity level: ${severityLabel}. Affected area: ${affectedPct} percent of the leaf is affected. 72-hour risk level: ${riskLevelDisplay}. Immediate actions to take now: ${doNowText}. Warning signs to watch for: ${watchForText}.`;
 }
 
 /**
