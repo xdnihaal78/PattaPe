@@ -14,9 +14,9 @@
 
 **What we are NOT building.** This list is final. Anyone who proposes one of these after hour 0 gets ignored:
 
-- RAG / vector DB / any LLM in the pipeline
+- Heavy RAG / vector DB / hallucinating LLM making primary diagnostic decisions (Gemini 2.5 Flash-Lite is integrated strictly as an auxiliary second-opinion & plain-language explanation layer, never overriding EfficientNet)
 - Object detection or segmentation models
-- Translation models or speech recognition models
+- Translation models or speech recognition models (we use static i18n dictionaries + browser native SpeechSynthesis)
 - React Native / Flutter / native mobile app
 - User auth, signup, OAuth
 - Docker, Kubernetes, CI/CD
@@ -49,7 +49,7 @@
 
 ---
 
-## 2. The two architecture decisions that make this survivable
+## 2. The key architecture decisions that make this survivable
 
 ### 2.1 One model over all crops, masked at inference
 
@@ -106,6 +106,16 @@ Fallback if Grad-CAM misbehaves: HSV threshold for brown/yellow pixels inside th
 
 Severity, spread risk, and advisory selection are deterministic rule engines. There is no dataset for any of them, so training a model would be fabrication. Real agromet advisories are rule-based too — this is the correct approach, not a compromise.
 
+### 2.4 Gemini 2.5 Flash-Lite as Multimodal Second-Opinion & Explainer
+
+Primary vision diagnosis is strictly performed by our trained EfficientNet-B0 model. However, raw disease labels and heatmaps are not always self-explanatory to smallholder farmers. 
+
+We integrate **Gemini 2.5 Flash-Lite** (`ml/gemini_explainer.py` via `google-genai`) to serve two critical roles:
+1. **Multimodal Second Opinion:** Gemini independently inspects the leaf image with strict structured JSON schema output and compares its finding with the EfficientNet prediction (`agreement: true/false`).
+2. **Farmer-Friendly Visual Evidence & Plain Explanation:** Returns 2–4 factual visual observations (e.g. "yellow wavy margins") and a 2–4 sentence jargon-free farmer explanation in simple terms.
+3. **Escalation Safeguard:** Gemini NEVER overrides EfficientNet. If Gemini strongly disagrees with EfficientNet, it triggers human officer escalation (`escalate = true`), preventing silent misdiagnoses.
+4. **Offline Resilient:** If `GEMINI_API_KEY` is not configured or the network times out, the backend gracefully defaults `gemini: null` and the core flow continues without crashing.
+
 ---
 
 ## 3. The JSON contract — written in hour 1, frozen forever
@@ -137,6 +147,21 @@ Everything is built against this. Backend serves it hardcoded from hour 1 so fro
     "watch_for": ["...", "..."],
     "avoid": ["..."],
     "source": "TNAU Agritech Portal — Crop Protection"
+  },
+  "gemini": {
+    "gemini_assessment": "bacterial_leaf_blight",
+    "agreement": true,
+    "assessment_confidence": "high",
+    "visual_evidence": [
+      "Yellow to straw-coloured necrotic lesions along leaf margins",
+      "Wavy margins with water-soaked boundaries typical of bacterial blight"
+    ],
+    "possible_causes": [
+      "Bacterial infection (Xanthomonas oryzae pv. oryzae)",
+      "Favoured by high humidity (>80%) and warm temperatures (25-30°C)"
+    ],
+    "farmer_explanation": "The leaf shows classic signs of Bacterial Leaf Blight, starting with yellowish stripes along the leaf edges that dry up. This reduces the green area needed for the crop to produce grain, which can reduce yield if not managed.",
+    "disagreement_reason": null
   },
   "escalate": true,
   "escalate_reason": "severity_moderate_and_risk_high",
@@ -198,15 +223,15 @@ Hardest role, and the one with a real deadline. Your job is done at hour 26; aft
 |---|---|
 | 0–1 | Agree contract with the team. |
 | 1–**3** | **Mock FastAPI server live.** `POST /predict` returns the hardcoded JSON above with a 1.5s artificial delay. This unblocks F1 and F2 — treat it as your most urgent task of the whole 48h. |
-| 3–6 | SQLite schema: `cases(id, crop, disease, confidence, severity, affected_pct, risk, lat, lon, village, status, created_at)`. `GET /cases`, `PATCH /cases/{id}/status`. |
+| 3–6 | SQLite schema: `cases(id, crop, disease, confidence, severity, affected_pct, risk, gemini_agreement, lat, lon, village, status, created_at)`. `GET /cases`, `PATCH /cases/{id}/status`. |
 | 6–9 | Open-Meteo integration: `lat/lon → {humidity, rain_72h, temp_avg}`. No API key needed. Cache responses — the venue wifi will fail at some point and a cached fallback saves the demo. |
-| 9–12 | Swap in M1's `infer.py`. Serve heatmap PNGs from `/static/`. **Gate at hour 12.** |
-| 12–16 | Wire C1's rule engine: severity buckets, risk levels, advisory lookup, escalation flag. |
+| 9–12 | Swap in M1's `predict.py` + `gradcam.py`. Serve heatmap PNGs from `/static/`. **Gate at hour 12.** |
+| 12–16 | Wire C1's rule engine: severity buckets, risk levels, advisory lookup. Wire `ml/gemini_explainer.py` as auxiliary second opinion (graceful degradation to `gemini: null` if API key missing/offline). Evaluate escalation rules (including model vs Gemini disagreement). |
 | 16–22 | `GET /stats` for the dashboard: counts by crop, by severity, by disease, 7-day trend. |
-| 22–30 | Sleep shift. Then: error handling, image size limits, graceful degradation when the weather API times out. |
+| 22–30 | Sleep shift. Then: error handling, image size limits, graceful degradation when the weather API or Gemini times out. |
 | 30+ | Support I1 with deploy. Freeze at hour 38. |
 
-**Hard requirement:** the app must still function with no internet. If the weather call fails, return `risk_72h: {level: "unknown"}` and render the rest. A demo that white-screens because the venue wifi dropped is a lost hackathon.
+**Hard requirement:** the app must still function with no internet or without Gemini. If the weather call fails, return `risk_72h: {level: "unknown"}`. If Gemini fails/offline, return `gemini: null` and render the rest. A demo that white-screens because an API timed out is a lost hackathon.
 
 ---
 
@@ -218,11 +243,11 @@ The single most important screen in the project. Guard your time.
 |---|---|
 | 1–3 | Vite + React + Tailwind PWA scaffold, mobile viewport. |
 | 3–8 | **Screen 1:** crop picker — 5 huge tiles with icons and native-script labels. **Screen 2:** camera / upload. Both against the mock. |
-| 8–14 | **Screen 3: the result screen.** This is the money shot. Photo with heatmap overlay, big severity chip, affected-area ring, risk badge, and the advisory as three collapsible blocks (Do now / Watch for / Avoid). |
+| 8–14 | **Screen 3: the result screen.** This is the money shot. Photo with heatmap overlay, big severity chip, affected-area ring, risk badge, expandable advisory blocks (Do now / Watch for / Avoid), and **Gemini Second Opinion card** (AI agreement badge, observed symptoms, plain explanation). |
 | 14–18 | Language switcher pulling from `i18n.json`. Test that Devanagari and Tamil don't break your layout — they're taller than Latin and will overflow tight containers. |
-| 18–24 | "Send to agriculture officer" button → `POST /cases`. Confirmation state. |
+| 18–24 | "Send to agriculture officer" button → `POST /cases`. Confirmation state. Escalation banner if severe or Gemini disagreed. |
 | 24–30 | Sleep shift. Then polish: loading states, error states, offline banner, transitions. |
-| 30–36 | Voice output — browser `speechSynthesis` with `lang: 'hi-IN'` / `'ta-IN'`. A speaker icon on the result screen reads the advisory aloud. ~30 minutes of work, and it's the feature judges remember. |
+| 30–36 | Voice output — browser `speechSynthesis` with `lang: 'hi-IN'` / `'ta-IN'`. A speaker icon on the result screen reads `gemini.farmer_explanation` (or advisory) aloud. ~30 minutes of work, and it's the feature judges remember. |
 | 36+ | Freeze. Help I1 rehearse. |
 
 **Design constraints, non-negotiable:** minimum 18px body text, minimum 56px tap targets, icon on every button, no screen requiring more than one decision. Assume the user has low digital literacy and is standing in a field in bright sunlight — high contrast, no thin grey text.
@@ -234,9 +259,9 @@ The single most important screen in the project. Guard your time.
 | Hours | Deliverable |
 |---|---|
 | 1–4 | Shared component library with F1 (buttons, cards, chips) so styling isn't done twice. Agree this split early. |
-| 4–10 | Case list table: crop, disease, severity, risk, village, date, status. Filter by crop and severity. |
-| 10–16 | Stat cards (total scanned / healthy / at-risk / infected) + two Recharts charts: cases by crop, cases over time. |
-| 16–20 | Case detail drawer: photo, heatmap, full model output, top-3 predictions, "Confirm diagnosis" / "Override" / "Request lab test" actions. **This is your expert-validation loop — the PS explicitly asks for it, so make it visible.** |
+| 4–10 | Case list table: crop, disease, severity, risk, Gemini agreement flag, village, date, status. Filter by crop, severity, and AI disagreement. |
+| 10–16 | Stat cards (total scanned / healthy / at-risk / infected / disagreements) + two Recharts charts: cases by crop, cases over time. |
+| 16–20 | Case detail drawer: photo, heatmap, full model output, top-3 predictions, Gemini assessment & symptoms breakdown, "Confirm diagnosis" / "Override" / "Request lab test" actions. **This is your expert-validation loop — the PS explicitly asks for it, so make it visible.** |
 | 20–24 | Village-level view. A simple table grouped by village with severity counts beats a broken map. Only attempt a Leaflet map if you're ahead. |
 | 24–30 | Sleep shift, then polish. |
 | 30–36 | Load C1's seed data and make sure the dashboard looks *populated and plausible*, not empty. |
@@ -358,7 +383,8 @@ That last condition matters — low confidence routing to a human is exactly the
 **Stack:**
 ```bash
 pip install torch torchvision timm ultralytics fastapi uvicorn \
-            pillow opencv-python grad-cam requests python-multipart
+            pillow opencv-python grad-cam requests python-multipart \
+            google-genai python-dotenv
 npm create vite@latest -- --template react
 npm install tailwindcss recharts lucide-react
 ```
@@ -375,8 +401,8 @@ npm install tailwindcss recharts lucide-react
 | 5–9 | Training run 1. Frontends building against mock. |
 | 9–12 | Grad-CAM + real `/predict`. |
 | **12** | **GATE: end-to-end works.** Photo → diagnosis + heatmap in the browser. If not: cut the officer dashboard, F2 moves to help F1. |
-| 12–18 | Advisory, severity, risk, i18n wired in. |
-| 18–22 | Officer dashboard, seeded with 40 cases. |
+| 12–18 | Advisory, severity, risk, i18n, and Gemini second-opinion explainer wired in. |
+| 18–22 | Officer dashboard, seeded with 40 cases (including model-Gemini disagreement examples). |
 | 22–26 | Sleep shifts (3 people at a time). Training run 2 in the background. |
 | 26–34 | Voice output. Farmer-screen polish. Dashboard polish. |
 | 34–38 | **One** stretch goal only: enable radish + cauliflower as a live "watch us add crops" moment (cheap, demos well) OR video frame-sampling for a field summary. Not both. |
@@ -388,6 +414,9 @@ npm install tailwindcss recharts lucide-react
 ---
 
 ## 9. Q&A prep — the questions you will actually get
+
+**"Isn't this just an LLM doing the diagnosis?"**
+No. An LLM alone has no spatial grounding, can hallucinate, and cannot produce localized lesion activations. 100% of our primary diagnosis and Grad-CAM lesion segmentation is performed by our fine-tuned EfficientNet-B0 trained on real Indian field datasets. Gemini 2.5 Flash-Lite acts solely as an auxiliary second-opinion consultant — it extracts factual visual observations and generates a plain-language summary for the farmer. If Gemini strongly disagrees with EfficientNet, the case is automatically escalated to a human agricultural extension officer.
 
 **"Isn't this just PlantVillage with a UI?"**
 No. We excluded PlantVillage deliberately — its uniform lab backgrounds let models score 99% and then fail on real photos. All three of our datasets were collected in real Indian fields, in Tamil Nadu and Maharashtra.
