@@ -9,36 +9,36 @@ export default function Header({ selectedCrop, currentLang, onLanguageChange }) 
   const t = TRANSLATIONS[currentLang] || TRANSLATIONS.en;
 
   return (
-    <header className="bg-emerald-900 text-white border-b-4 border-emerald-600 sticky top-0 z-40 shadow-xl">
-      <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+    <header className="bg-emerald-900 text-white border-b border-emerald-800 sticky top-0 z-40 shadow-md">
+      <div className="max-w-4xl mx-auto px-4 py-2 sm:py-2.5 flex items-center justify-between">
         
         {/* Logo & Branding */}
-        <Link to="/" className="flex items-center gap-2.5 focus:outline-none focus:ring-4 focus:ring-emerald-400 rounded-xl p-1">
-          <div className="bg-emerald-500 text-emerald-950 p-2 rounded-xl border-2 border-white shadow-md">
-            <Sprout className="w-8 h-8 font-black" />
+        <Link to="/" className="flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-emerald-400 rounded-lg">
+          <div className="bg-emerald-500 text-emerald-950 p-1.5 rounded-lg shadow-sm">
+            <Sprout className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-xl sm:text-2xl font-black tracking-tight leading-tight text-white m-0">
-              PattaPe <span className="text-emerald-300 font-extrabold">पत्तापे</span>
+            <h1 className="text-base sm:text-lg font-black tracking-tight leading-none text-white m-0">
+              PattaPe <span className="text-emerald-300 font-bold">पत्तापे</span>
             </h1>
-            <p className="text-xs sm:text-sm font-semibold text-emerald-200 m-0">
+            <p className="text-[10px] sm:text-xs font-semibold text-emerald-200 m-0 leading-tight">
               AI Crop Doctor
             </p>
           </div>
         </Link>
 
         {/* Right side: Crop Badge & Language Selector */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
           {selectedCrop && (
             <div 
               onClick={() => navigate('/')}
-              className="hidden sm:flex items-center gap-2 bg-emerald-800 border-2 border-emerald-500 rounded-xl px-3 py-1.5 cursor-pointer hover:bg-emerald-700 transition"
+              className="hidden sm:flex items-center gap-1.5 bg-emerald-800/90 border border-emerald-600 rounded-lg px-2.5 py-1 cursor-pointer hover:bg-emerald-700 transition"
               title={t.changeCrop}
             >
-              <span className="text-xl">{selectedCrop.icon}</span>
+              <span className="text-base">{selectedCrop.icon}</span>
               <div className="text-left">
-                <p className="text-xs text-emerald-200 font-bold m-0 leading-none">Crop</p>
-                <p className="text-sm font-black text-white m-0 leading-tight">{selectedCrop.name.split('/')[0]}</p>
+                <p className="text-[9px] text-emerald-200 font-bold m-0 leading-none">Crop</p>
+                <p className="text-xs font-bold text-white m-0 leading-tight">{selectedCrop.name.split('/')[0]}</p>
               </div>
             </div>
           )}

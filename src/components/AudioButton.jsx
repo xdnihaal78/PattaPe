@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Volume2, VolumeX, Radio } from 'lucide-react';
+import { Volume2, VolumeX } from 'lucide-react';
 import { speakText, stopSpeech, isSpeechSupported, TRANSLATIONS } from '../utils/helpers';
 
 export default function AudioButton({ textToRead, currentLang }) {
@@ -7,7 +7,6 @@ export default function AudioButton({ textToRead, currentLang }) {
   const t = TRANSLATIONS[currentLang] || TRANSLATIONS.en;
 
   useEffect(() => {
-    // Stop speech when component unmounts or text changes
     return () => {
       stopSpeech();
     };
@@ -33,20 +32,20 @@ export default function AudioButton({ textToRead, currentLang }) {
     <button
       type="button"
       onClick={handleToggleAudio}
-      className={`w-full btn-touch min-h-[64px] px-5 py-4 rounded-3xl font-black text-xl flex items-center justify-center gap-3 transition-all shadow-xl focus:outline-none focus:ring-4 focus:ring-amber-400 active:scale-95 ${
+      className={`w-full min-h-[48px] px-4 py-2.5 rounded-2xl font-black text-base flex items-center justify-center gap-2.5 transition-all shadow-md focus:outline-none focus:ring-2 focus:ring-amber-400 active:scale-98 border-2 ${
         isPlaying
-          ? 'bg-amber-600 hover:bg-amber-700 text-white border-4 border-amber-800 animate-pulse'
-          : 'bg-emerald-700 hover:bg-emerald-800 text-white border-4 border-emerald-900'
+          ? 'bg-amber-600 hover:bg-amber-700 text-white border-amber-800 animate-pulse'
+          : 'bg-emerald-700 hover:bg-emerald-800 text-white border-emerald-800'
       }`}
     >
       {isPlaying ? (
         <>
-          <VolumeX className="w-8 h-8 text-white stroke-[2.5]" />
+          <VolumeX className="w-5 h-5 text-white stroke-[2.5]" />
           <span>{t.stopAudio} (आवाज रोकें)</span>
         </>
       ) : (
         <>
-          <Volume2 className="w-8 h-8 text-amber-300 stroke-[2.5]" />
+          <Volume2 className="w-5 h-5 text-amber-300 stroke-[2.5]" />
           <span>{t.listenAdvice} 🔊</span>
         </>
       )}

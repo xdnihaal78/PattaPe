@@ -4,7 +4,7 @@
 
 @layer base {
   html {
-    font-size: 18px; /* Minimum 18px body text for high outdoor legibility */
+    font-size: 16px;
     -webkit-tap-highlight-color: transparent;
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
@@ -22,8 +22,8 @@
 
 /* Custom High-Contrast Outdoor Agriculture Theme Utilities */
 .btn-touch {
-  min-height: 56px;
-  min-width: 56px;
+  min-height: 48px;
+  min-width: 48px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -42,18 +42,63 @@
 /* Pulsing radar for leaf scanning */
 @keyframes scan-radar {
   0% {
-    top: 0%;
-    opacity: 0.8;
+    top: 2%;
+    opacity: 0.7;
   }
   50% {
     opacity: 1;
   }
   100% {
-    top: 100%;
-    opacity: 0.8;
+    top: 96%;
+    opacity: 0.7;
   }
 }
 
 .animate-scan-line {
-  animation: scan-radar 2.5s ease-in-out infinite alternate;
+  animation: scan-radar 2.2s ease-in-out infinite alternate;
 }
+
+@keyframes radar-sweep {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-radar-sweep {
+  animation: radar-sweep 4s linear infinite;
+}
+
+@keyframes float-leaf {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(2deg);
+  }
+}
+
+.animate-float-leaf {
+  animation: float-leaf 3.5s ease-in-out infinite;
+}
+
+@keyframes radar-ping {
+  0% {
+    transform: scale(0.85);
+    opacity: 0.8;
+  }
+  70% {
+    opacity: 0.3;
+  }
+  100% {
+    transform: scale(1.35);
+    opacity: 0;
+  }
+}
+
+.animate-radar-ping {
+  animation: radar-ping 2.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
