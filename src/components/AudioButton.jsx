@@ -46,15 +46,33 @@ export default function AudioButton({ textToRead, currentLang = 'en' }) {
     return null;
   }
 
-  // Localized secondary labels for diverse farmers
+  // Localized subtitles and titles for diverse farmers
   const localizedSubtitles = {
-    hi: isPlaying ? 'बोलना बंद करें' : 'सलाह सुनें',
-    ta: isPlaying ? 'நிறுத்தவும்' : 'ஆலோசனை கேட்கவும்',
-    kn: isPlaying ? 'ಧ್ವನಿ ನಿಲ್ಲಿಸಿ' : 'ಸಲಹೆ ಆಲಿಸಿ',
-    en: isPlaying ? 'Tap to pause' : 'Audio narration'
+    hi: isPlaying ? 'बोलना बंद करें' : 'सलाह सुनें (Audio Advice)',
+    ta: isPlaying ? 'நிறுத்தவும்' : 'ஆலோசனை கேட்கவும் (Audio Advice)',
+    kn: isPlaying ? 'ಧ್ವನಿ ನಿಲ್ಲಿಸಿ' : 'ಸಲಹೆ ಆಲಿಸಿ (Audio Advice)',
+    ka: isPlaying ? 'ಧ್ವನಿ ನಿಲ್ಲಿಸಿ' : 'ಸಲಹೆ ಆಲಿಸಿ (Audio Advice)',
+    en: isPlaying ? 'Tap to pause narration' : 'Audio narration for farmers'
+  };
+
+  const localizedTitles = {
+    hi: isPlaying ? 'Stop Speaking' : 'Listen to Advice',
+    ta: isPlaying ? 'Stop Speaking' : 'Listen to Advice',
+    kn: isPlaying ? 'Stop Speaking' : 'Listen to Advice',
+    ka: isPlaying ? 'Stop Speaking' : 'Listen to Advice',
+    en: isPlaying ? 'Stop Speaking' : 'Listen to Advice'
   };
 
   const secondaryLabel = localizedSubtitles[currentLang] || localizedSubtitles.en;
+  const primaryTitle = localizedTitles[currentLang] || localizedTitles.en;
+
+  const currentBadge = currentLang === 'hi' 
+    ? 'hi-IN' 
+    : currentLang === 'ta' 
+    ? 'ta-IN' 
+    : (currentLang === 'kn' || currentLang === 'ka') 
+    ? 'ka-IN' 
+    : 'en-IN';
 
   return (
     <div className="w-full">
@@ -83,8 +101,14 @@ export default function AudioButton({ textToRead, currentLang = 'en' }) {
           </div>
 
           <div className="text-left flex flex-col justify-center">
-            <span className="font-black text-base sm:text-lg leading-tight tracking-tight">
-              {isPlaying ? 'Stop Speaking' : 'Listen to Advice'}
+            <span className="font-black text-base sm:text-lg leading-tight tracking-tight flex items-center gap-2">
+              <span>{primaryTitle}</span>
+              {currentLang === 'ta' && !isPlaying && (
+                <span className="text-xs bg-emerald-800/90 text-emerald-200 px-2 py-0.5 rounded-md font-bold">தமிழ்</span>
+              )}
+              {(currentLang === 'kn' || currentLang === 'ka') && !isPlaying && (
+                <span className="text-xs bg-emerald-800/90 text-emerald-200 px-2 py-0.5 rounded-md font-bold">ಕನ್ನಡ</span>
+              )}
             </span>
             <span className="text-xs font-semibold opacity-90 leading-tight">
               {secondaryLabel}
@@ -103,7 +127,7 @@ export default function AudioButton({ textToRead, currentLang = 'en' }) {
             </div>
           ) : (
             <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-emerald-800/80 text-emerald-100 border border-emerald-600/60 tracking-wider uppercase">
-              {currentLang === 'hi' ? 'hi-IN' : currentLang === 'ta' ? 'ta-IN' : currentLang === 'kn' ? 'ka-IN' : 'en-IN'}
+              {currentBadge}
             </span>
           )}
         </div>

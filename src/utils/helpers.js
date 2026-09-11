@@ -112,14 +112,14 @@ export function buildVoiceAdviceScript(diagnosis, currentLang = 'en') {
 
   const riskLevelRaw = (diagnosis.risk_72h?.level || diagnosis.weatherRisk?.level || 'moderate').toLowerCase();
   const riskLabels = {
-    high: { en: 'High Risk', hi: 'अधिक खतरा', ta: 'அதிக ஆபத்து', kn: 'ಹೆಚ್ಚಿನ ಅಪಾಯ' },
-    moderate: { en: 'Moderate Risk', hi: 'मध्यम खतरा', ta: 'மிதமான ஆபத்து', kn: 'ಮಧ್ಯಮ ಅಪಾಯ' },
-    low: { en: 'Low Risk', hi: 'कम खतरा', ta: 'குறைந்த ஆபத்து', kn: 'ಕಡಿಮೆ ಅಪಾಯ' }
+    high: { en: 'High Risk', hi: 'अधिक खतरा', ta: 'அதிக ஆபத்து', kn: 'ಹೆಚ್ಚಿನ ಅಪಾಯ', ka: 'ಹೆಚ್ಚಿನ ಅಪಾಯ' },
+    moderate: { en: 'Moderate Risk', hi: 'मध्यम खतरा', ta: 'மிதமான ஆபத்து', kn: 'ಮಧ್ಯಮ ಅಪಾಯ', ka: 'ಮಧ್ಯಮ ಅಪಾಯ' },
+    low: { en: 'Low Risk', hi: 'कम खतरा', ta: 'குறைந்த ஆபத்து', kn: 'ಕಡಿಮೆ ಅಪಾಯ', ka: 'ಕಡಿಮೆ ಅಪಾಯ' }
   };
   const isHigh = riskLevelRaw.includes('high') || riskLevelRaw.includes('severe');
   const isMod = riskLevelRaw.includes('moderate') || riskLevelRaw.includes('medium');
   const riskKey = isHigh ? 'high' : isMod ? 'moderate' : 'low';
-  const riskLevelDisplay = riskLabels[riskKey][currentLang] || riskLabels[riskKey].en;
+  const riskLevelDisplay = riskLabels[riskKey][currentLang] || riskLabels[riskKey].kn || riskLabels[riskKey].en;
 
   // Localized Do Now & Watch For items
   const localizedDoNowMap = {
@@ -137,6 +137,11 @@ export function buildVoiceAdviceScript(diagnosis, currentLang = 'en') {
       'ತೇವಾಂಶವಿರುವ ಹೊಲದಲ್ಲಿ ಕೆಲಸ ಮಾಡುವುದನ್ನು ತಪ್ಪಿಸಿ',
       'ಹೊಲದಲ್ಲಿ ನಿಂತಿರುವ ಹೆಚ್ಚುವರಿ ನೀರನ್ನು ತಕ್ಷಣ ಹೊರಹಾಕಿ',
       'ಸೋಂಕು ತಗುಲಿದ ಕೃಷಿ ಉಪಕರಣಗಳನ್ನು ಹಾಗೆಯೇ ಬಳಸಬೇಡಿ'
+    ],
+    ka: [
+      'ತೇವಾಂಶವಿರುವ ಹೊಲದಲ್ಲಿ ಕೆಲಸ ಮಾಡುವುದನ್ನು ತಪ್ಪಿಸಿ',
+      'ಹೊಲದಲ್ಲಿ ನಿಂತಿರುವ ಹೆಚ್ಚುವರಿ ನೀರನ್ನು ತಕ್ಷಣ ಹೊರಹಾಕಿ',
+      'ಸೋಂಕು ತಗುಲಿದ ಕೃಷಿ ಉಪಕರಣಗಳನ್ನು ಹಾಗೆಯೇ ಬಳಸಬೇಡಿ'
     ]
   };
 
@@ -150,6 +155,10 @@ export function buildVoiceAdviceScript(diagnosis, currentLang = 'en') {
       'அருகிலுள்ள இலைகள் மஞ்சள் நிறமாக மாறுதல்'
     ],
     kn: [
+      'ಎಲೆಗಳ ಹಾನಿ ವೇಗವಾಗಿ ಹರಡುವುದು',
+      'ಹತ್ತಿರದ ಎಲೆಗಳು ಹಳದಿ ಬಣ್ಣಕ್ಕೆ ತಿರುಗುವುದು'
+    ],
+    ka: [
       'ಎಲೆಗಳ ಹಾನಿ ವೇಗವಾಗಿ ಹರಡುವುದು',
       'ಹತ್ತಿರದ ಎಲೆಗಳು ಹಳದಿ ಬಣ್ಣಕ್ಕೆ ತಿರುಗುವುದು'
     ]
@@ -169,7 +178,7 @@ export function buildVoiceAdviceScript(diagnosis, currentLang = 'en') {
     return `நோய் பெயர்: ${diseaseName}. பாதிப்பு தீவிரம்: ${severityLabel}. பாதிக்கப்பட்ட சதவீதம்: ${affectedPct} சதவீதம். 72 மணி நேர ஆபத்து நிலை: ${riskLevelDisplay}. உடனடியாக செய்ய வேண்டியவை: ${doNowText}. கவனிக்க வேண்டிய எச்சரிக்கைகள்: ${watchForText}.`;
   }
 
-  if (currentLang === 'kn') {
+  if (currentLang === 'kn' || currentLang === 'ka') {
     return `ರೋಗದ ಹೆಸರು: ${diseaseName}. ತೀವ್ರತೆಯ ಮಟ್ಟ: ${severityLabel}. ಹಾನಿಗೊಳಗಾದ ಶೇಕಡಾವಾರು: ${affectedPct} ಪ್ರತಿಶತ. 72 ಗಂಟೆಗಳ ಅಪಾಯದ ಮಟ್ಟ: ${riskLevelDisplay}. ತಕ್ಷಣ ಮಾಡಬೇಕಾದ ಕ್ರಮಗಳು: ${doNowText}. ಗಮನಿಸಬೇಕಾದ ಎಚ್ಚರಿಕೆಗಳು: ${watchForText}.`;
   }
 
@@ -184,10 +193,10 @@ export function getSeverityStyle(severity, currentLang = 'en') {
   const sev = severity?.toLowerCase();
   
   const labels = {
-    severe: { en: 'Severe', hi: 'गंभीर', ta: 'தீவிரமானது', kn: 'ತೀವ್ರ' },
-    moderate: { en: 'Moderate', hi: 'मध्यम', ta: 'மிதமானது', kn: 'ಮಧ್ಯಮ' },
-    mild: { en: 'Mild', hi: 'हल्का', ta: 'குறைவானது', kn: 'ಸೌಮ್ಯ' },
-    trace: { en: 'Trace', hi: 'नगण्य (कम)', ta: 'மிகக்குறைவு', kn: 'ಕನಿಷ್ಠ' }
+    severe: { en: 'Severe', hi: 'गंभीर', ta: 'தீவிரமானது', kn: 'ತೀವ್ರ', ka: 'ತೀವ್ರ' },
+    moderate: { en: 'Moderate', hi: 'मध्यम', ta: 'மிதமான', kn: 'ಮಧ್ಯಮ', ka: 'ಮಧ್ಯಮ' },
+    mild: { en: 'Mild', hi: 'हल्का', ta: 'குறைவானது', kn: 'ಸೌಮ್ಯ', ka: 'ಸೌಮ್ಯ' },
+    trace: { en: 'Trace', hi: 'नगण्य (कम)', ta: 'மிகக்குறைவு', kn: 'ಕನಿಷ್ಠ', ka: 'ಕನಿಷ್ಠ' }
   };
 
   switch (sev) {
