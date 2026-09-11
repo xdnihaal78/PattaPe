@@ -43,6 +43,16 @@ export default function Header({ selectedCrop, currentLang, onLanguageChange }) 
             </div>
           )}
 
+          <Link
+            to="/officer"
+            className="inline-flex items-center gap-1.5 bg-emerald-950/90 hover:bg-emerald-800 text-emerald-300 font-bold text-xs px-2.5 sm:px-3 py-1.5 rounded-xl border border-emerald-500 shadow-sm transition"
+            title="Open Extension Officer Console"
+          >
+            <ShieldAlert className="w-3.5 h-3.5 text-emerald-400" />
+            <span className="hidden xs:inline">Officer Portal</span>
+            <span className="xs:hidden">Officer</span>
+          </Link>
+
           <LanguageSwitcher currentLang={currentLang} onLanguageChange={onLanguageChange} />
         </div>
 
