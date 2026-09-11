@@ -1,44 +1,71 @@
 import React from 'react';
 import { Percent, Activity } from 'lucide-react';
+import { TRANSLATIONS } from '../utils/helpers';
 
 /**
  * AffectedAreaCard Component
  * Displays:
  * - affected_pct prominently
  * - Clear text explaining how much of the leaf is affected
- * Example: "26% of the leaf is affected"
- * Perfectly sized and balanced.
+ * Full multi-language support (en, hi, ta, kn).
  */
 export default function AffectedAreaCard({ affectedPct = 0, currentLang = 'en' }) {
+  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.en;
   const percentage = Math.min(Math.max(Math.round(affectedPct), 0), 100);
 
-  // Status interpretation for farmer clarity
-  const getSpreadNote = (pct) => {
+  const getSpreadInfo = (pct) => {
     if (pct <= 15) {
       return {
-        en: 'Minor surface coverage — Early stage containment possible',
-        hi: 'शुरुआती स्तर — तुरंत ध्यान देकर फैलाव रोका जा सकता है',
-        badge: 'Early Stage / कम फैलाव',
+        badge: t.earlyStage || 'Early Stage',
+        desc: t.earlyStageDesc || 'Minor surface coverage — Early stage containment possible',
         color: 'text-emerald-800 bg-emerald-100 border-emerald-300'
       };
     }
     if (pct <= 40) {
       return {
-        en: 'Moderate surface damage — Prompt treatment recommended',
-        hi: 'मध्यम स्तर — समय पर उपचार करने से फसल सुरक्षित रहेगी',
-        badge: 'Moderate / मध्यम',
+        badge: t.moderateSpread || 'Moderate',
+        desc: t.moderateSpreadDesc || 'Moderate surface damage — Prompt treatment recommended',
         color: 'text-amber-900 bg-amber-100 border-amber-300'
       };
     }
     return {
-      en: 'Extensive damage detected — Urgent intervention required',
-      hi: 'गंभीर स्तर — फसल बचाने के लिए तुरंत कदम उठाएं',
-      badge: 'High Spread / व्यापक',
+      badge: t.highSpread || 'High Spread',
+      desc: t.highSpreadDesc || 'Extensive damage detected — Urgent intervention required',
       color: 'text-red-900 bg-red-100 border-red-300'
     };
   };
 
-  const note = getSpreadNote(percentage);
+  const info = getSpreadInfo(percentage);
+
+  // Formatted statement for Indian languages
+  const renderLeafStatement = () => {
+    if (currentLang === 'hi') {
+      return (
+        <span>
+          पत्ती का <span className="text-red-700 font-black">{percentage}%</span> हिस्सा प्रभावित है
+        </span>
+      );
+    }
+    if (currentLang === 'ta') {
+      return (
+        <span>
+          இலையின் <span className="text-red-700 font-black">{percentage}%</span> பகுதி பாதிக்கப்பட்டுள்ளது
+        </span>
+      );
+    }
+    if (currentLang === 'kn') {
+      return (
+        <span>
+          ಎಲೆಯ <span className="text-red-700 font-black">{percentage}%</span> ಭಾಗ ಹಾನಿಗೊಳಗಾಗಿದೆ
+        </span>
+      );
+    }
+    return (
+      <span>
+        <span className="text-red-700 font-black">{percentage}%</span> of the leaf is affected
+      </span>
+    );
+  };
 
   return (
     <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-sm space-y-3">
@@ -51,16 +78,16 @@ export default function AffectedAreaCard({ affectedPct = 0, currentLang = 'en' }
           </div>
           <div>
             <h2 className="text-sm sm:text-base font-black text-slate-900 m-0 leading-tight">
-              Affected Leaf Area
+              {t.affectedArea || 'Affected Leaf Area'}
             </h2>
             <span className="text-[10px] sm:text-xs font-semibold text-slate-500">
-              {currentLang === 'hi' ? 'प्रभावित पत्ती का हिस्सा' : 'Surface Lesion Coverage'}
+              {t.surfaceCoverage || 'Surface Lesion Coverage'}
             </span>
           </div>
         </div>
 
-        <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-lg border ${note.color}`}>
-          {note.badge}
+        <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-lg border ${info.color}`}>
+          {info.badge}
         </span>
       </div>
 
@@ -73,11 +100,7 @@ export default function AffectedAreaCard({ affectedPct = 0, currentLang = 'en' }
         </div>
 
         <p className="text-sm sm:text-base font-bold text-slate-900 m-0 leading-tight">
-          {currentLang === 'hi' ? (
-            <span>पत्ती का <span className="text-red-700 font-black">{percentage}%</span> हिस्सा प्रभावित है</span>
-          ) : (
-            <span><span className="text-red-700 font-black">{percentage}%</span> of the leaf is affected</span>
-          )}
+          {renderLeafStatement()}
         </p>
 
         {/* Dynamic Progress Bar */}
@@ -89,9 +112,9 @@ export default function AffectedAreaCard({ affectedPct = 0, currentLang = 'en' }
             />
           </div>
           <div className="flex justify-between text-[10px] font-bold text-slate-400 mt-1 px-1">
-            <span>0% (Clean)</span>
+            <span>0% ({t.clean || 'Clean'})</span>
             <span>50%</span>
-            <span>100% (Total)</span>
+            <span>100% ({t.total || 'Total'})</span>
           </div>
         </div>
       </div>
@@ -100,7 +123,7 @@ export default function AffectedAreaCard({ affectedPct = 0, currentLang = 'en' }
       <div className="bg-amber-50/60 p-2.5 sm:p-3 rounded-xl border border-amber-200/80 flex items-start gap-2">
         <Activity className="w-4 h-4 text-amber-800 shrink-0 mt-0.5" />
         <p className="text-xs sm:text-sm font-semibold text-amber-950 m-0 leading-snug">
-          {currentLang === 'hi' ? note.hi : note.en}
+          {info.desc}
         </p>
       </div>
 

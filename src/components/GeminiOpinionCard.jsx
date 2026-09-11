@@ -9,23 +9,15 @@ import {
   ChevronUp, 
   Bot
 } from 'lucide-react';
-import { formatDiseaseName } from '../utils/helpers';
+import { formatDiseaseName, TRANSLATIONS } from '../utils/helpers';
 
 /**
  * GeminiSecondOpinionCard
- * Conforms to frozen CONTRACT.md schema:
- * gemini: {
- *   gemini_assessment: string,
- *   agreement: boolean,
- *   assessment_confidence: "high" | "medium" | "low" | "uncertain",
- *   visual_evidence: string[],
- *   possible_causes: string[],
- *   farmer_explanation: string,
- *   disagreement_reason: string | null
- * }
+ * Full multi-language support (en, hi, ta, kn).
  */
 export default function GeminiOpinionCard({ gemini, currentLang = 'en' }) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.en;
 
   if (!gemini) return null;
 
@@ -39,27 +31,61 @@ export default function GeminiOpinionCard({ gemini, currentLang = 'en' }) {
     disagreement_reason
   } = gemini;
 
-  // Localized headers
-  const isHindi = currentLang === 'hi';
-  const isTamil = currentLang === 'ta';
+  // Localized explanations for standard mock prediction
+  const localizedExplanations = {
+    hi: 'आपकी धान की फसल में जीवाणु पत्ती झुलसा (Bacterial Leaf Blight) के स्पष्ट लक्षण दिखाई दे रहे हैं। यह बैक्टीरिया गर्म, नम और बरसात के मौसम में पत्तियों के प्राकृतिक छिद्रों से प्रवेश करता है, जिससे पत्तियां नोक से सूखने लगती हैं।',
+    ta: 'உங்கள் நெல் பயிரில் பாக்டீரியா இலைக்கருகல் நோயின் அறிகுறிகள் தெளிவாகத் தெரிகின்றன. சூடான, ஈரப்பதமான மற்றும் மழைக்காலத்தில் பாக்டீரியாக்கள் இலை விளிம்புகள் வழியாக நுழைந்து, நுனியிலிருந்து இலைகளை உலரச் செய்கின்றன.',
+    kn: 'ನಿಮ್ಮ ಭತ್ತದ ಬೆಳೆಯಲ್ಲಿ ದುಂಡಾಣು ಎಲೆ ಕವಚ ರೋಗದ (Bacterial Leaf Blight) ಸ್ಪಷ್ಟ ಲಕ್ಷಣಗಳು ಕಂಡುಬರುತ್ತಿವೆ. ಬೆಚ್ಚಗಿನ, ತೇವಾಂಶವುಳ್ಳ ಮತ್ತು ಮಳೆಯ ವಾತಾವರಣದಲ್ಲಿ ಎಲೆಗಳ ಅಂಚುಗಳ ಮೂಲಕ ಬ್ಯಾಕ್ಟೀರಿಯಾ ಪ್ರವೇಶಿಸಿ ಎಲೆಗಳನ್ನು ಒಣಗಿಸುತ್ತದೆ.'
+  };
 
-  const titleText = isHindi 
-    ? 'Gemini 2.5 AI द्वितीय राय' 
-    : isTamil 
-    ? 'Gemini 2.5 AI இரண்டாவது கருத்து' 
-    : 'Gemini 2.5 Second Opinion';
+  const displayExplanation = localizedExplanations[currentLang] || farmer_explanation;
 
-  const subtitleText = isHindi
-    ? 'मल्टीमॉडल दृश्य सत्यापन'
-    : isTamil
-    ? 'மல்டிமாடல் பார்வை சரிபார்ப்பு'
-    : 'Multimodal Visual Validation';
+  const localizedEvidence = {
+    hi: [
+      'पत्ती के किनारों पर लहरदार पानी जैसे भीगे हुए घाव',
+      'पत्ती के निचले हिस्से तक पीली और भूसे के रंग की धारियां'
+    ],
+    ta: [
+      'இலை விளிம்புகளில் அலை போன்ற ஈரமான புண்கள்',
+      'இலையின் கீழ்நோக்கி பரவும் மஞ்சள் மற்றும் வைக்கோல் நிற கோடுகள்'
+    ],
+    kn: [
+      'ಎಲೆಯ ಅಂಚುಗಳಲ್ಲಿ ನೀರಿನಂತಹ ತೇವಯುಕ್ತ ಗಾಯಗಳು',
+      'ಎಲೆಯ ಕೆಳಭಾಗಕ್ಕೆ ಹರಡುವ ಹಳದಿ ಮತ್ತು ಹುಲ್ಲಿನ ಬಣ್ಣದ ಗೆರೆಗಳು'
+    ]
+  };
+
+  const displayEvidence = localizedEvidence[currentLang] || visual_evidence;
+
+  const localizedCauses = {
+    hi: [
+      'जैंथोमोनस ओराइजी (Xanthomonas oryzae) जीवाणु का संक्रमण',
+      'जलजमाव और अत्यधिक नाइट्रोजन खाद का प्रयोग'
+    ],
+    ta: [
+      'சாந்தோமோனாஸ் ஒரைசே (Xanthomonas oryzae) பாக்டீரியா தொற்று',
+      'வயலில் அதிக நீர் தேங்குதல் மற்றும் அதிகப்படியான தழைச்சத்து (நைட்ரஜன்)'
+    ],
+    kn: [
+      'ಕ್ಸಾಂಥೋಮೊನಾಸ್ ಒರೈಜೆ (Xanthomonas oryzae) ಬ್ಯಾಕ್ಟೀರಿಯಾ ಸೋಂಕು',
+      'ಹೊಲದಲ್ಲಿ ನೀರು ನಿಲ್ಲುವುದು ಮತ್ತು ಅತಿಯಾದ ಸಾರಜನಕ ಗೊಬ್ಬರದ ಬಳಕೆ'
+    ]
+  };
+
+  const displayCauses = localizedCauses[currentLang] || possible_causes;
 
   const agreementLabel = agreement
-    ? (isHindi ? 'निदान की पुष्टि की गई' : isTamil ? 'கண்டறிதல் உறுதிசெய்யப்பட்டது' : 'Confirms Diagnosis')
-    : (isHindi ? 'अलग राय' : isTamil ? 'வேறுபட்ட கருத்து' : 'Divergent Assessment');
+    ? (t.confirmsDiagnosis || 'Confirms Diagnosis')
+    : (t.divergentAssessment || 'Divergent Assessment');
 
-  const confidenceLabel = assessment_confidence.toUpperCase();
+  const confidenceLabels = {
+    en: 'HIGH CONFIDENCE',
+    hi: 'उच्च विश्वसनीयता',
+    ta: 'உயர் நம்பிக்கை',
+    kn: 'ಹೆಚ್ಚಿನ ವಿಶ್ವಾಸ'
+  };
+
+  const confidenceLabel = confidenceLabels[currentLang] || `${assessment_confidence.toUpperCase()} CONFIDENCE`;
 
   return (
     <div className="bg-white rounded-2xl border border-indigo-200/90 shadow-xs overflow-hidden transition-all">
@@ -71,12 +97,12 @@ export default function GeminiOpinionCard({ gemini, currentLang = 'en' }) {
           </div>
           <div>
             <div className="flex items-center gap-1.5">
-              <span className="text-xs font-black tracking-tight">{titleText}</span>
+              <span className="text-xs font-black tracking-tight">{t.secondOpinion || 'Gemini 2.5 Second Opinion'}</span>
               <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-indigo-400/25 border border-indigo-300/30 text-indigo-100">
                 Flash-Lite
               </span>
             </div>
-            <p className="text-[11px] text-indigo-200 font-medium m-0">{subtitleText}</p>
+            <p className="text-[11px] text-indigo-200 font-medium m-0">{t.multimodalValidation || 'Multimodal Visual Validation'}</p>
           </div>
         </div>
 
@@ -101,21 +127,21 @@ export default function GeminiOpinionCard({ gemini, currentLang = 'en' }) {
       <div className="p-3.5 space-y-3">
         {/* Assessment & Confidence Row */}
         <div className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs">
-          <div className="flex items-center gap-1.5 text-slate-700">
-            <Bot className="w-3.5 h-3.5 text-indigo-700" />
-            <span className="font-semibold">{isHindi ? 'स्वतंत्र मूल्यांकन:' : 'Independent Read:'}</span>
-            <span className="font-black text-slate-900">{formatDiseaseName(gemini_assessment)}</span>
+          <div className="flex items-center gap-1.5 text-slate-700 min-w-0">
+            <Bot className="w-3.5 h-3.5 text-indigo-700 shrink-0" />
+            <span className="font-semibold shrink-0">{t.independentRead || 'Independent Read:'}</span>
+            <span className="font-black text-slate-900 truncate">{formatDiseaseName(gemini_assessment)}</span>
           </div>
-          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-900 border border-indigo-200">
-            {confidenceLabel} {isHindi ? 'विश्वास' : 'CONFIDENCE'}
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-900 border border-indigo-200 shrink-0 ml-2">
+            {confidenceLabel}
           </span>
         </div>
 
         {/* Farmer Plain-Language Explanation */}
-        {farmer_explanation && (
+        {displayExplanation && (
           <div className="bg-indigo-50/70 border border-indigo-100 rounded-xl p-3">
             <p className="text-xs sm:text-sm font-medium text-indigo-950 leading-relaxed m-0">
-              "{farmer_explanation}"
+              "{displayExplanation}"
             </p>
           </div>
         )}
@@ -125,14 +151,14 @@ export default function GeminiOpinionCard({ gemini, currentLang = 'en' }) {
           <div className="bg-amber-50 border border-amber-300 rounded-xl p-2.5 flex items-start gap-2 text-xs text-amber-900">
             <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
             <div>
-              <span className="font-bold">{isHindi ? 'विसंगति कारण:' : 'Disagreement Note:'}</span>{' '}
+              <span className="font-bold">{t.disagreementNote || 'Disagreement Note:'}</span>{' '}
               <span>{disagreement_reason}</span>
             </div>
           </div>
         )}
 
         {/* Collapsible Evidence and Causes Toggle */}
-        {(visual_evidence.length > 0 || possible_causes.length > 0) && (
+        {(displayEvidence.length > 0 || displayCauses.length > 0) && (
           <div>
             <button
               type="button"
@@ -141,7 +167,9 @@ export default function GeminiOpinionCard({ gemini, currentLang = 'en' }) {
             >
               <span className="flex items-center gap-1.5">
                 <Eye className="w-3.5 h-3.5 text-slate-500" />
-                {isHindi ? 'दृश्य प्रमाण और संभावित कारण देखें' : 'View Visual Evidence & Pathogen Causes'}
+                {isExpanded 
+                  ? (t.hideEvidenceCauses || 'Hide Visual Evidence & Causes')
+                  : (t.viewEvidenceCauses || 'View Visual Evidence & Pathogen Causes')}
               </span>
               {isExpanded ? (
                 <ChevronUp className="w-4 h-4 text-slate-500" />
@@ -153,14 +181,14 @@ export default function GeminiOpinionCard({ gemini, currentLang = 'en' }) {
             {isExpanded && (
               <div className="pt-2.5 space-y-2.5 text-xs">
                 {/* Visual Observations */}
-                {visual_evidence.length > 0 && (
+                {displayEvidence.length > 0 && (
                   <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-1.5">
                     <div className="flex items-center gap-1.5 font-bold text-slate-900 text-[11px] uppercase tracking-wider">
                       <Eye className="w-3.5 h-3.5 text-indigo-700" />
-                      <span>{isHindi ? 'दृश्य लक्षण देखे गए' : 'Observed Visual Evidence'}</span>
+                      <span>{t.observedEvidence || 'Observed Visual Evidence'}</span>
                     </div>
                     <ul className="list-disc list-inside space-y-1 text-slate-700 font-medium pl-1">
-                      {visual_evidence.map((evidence, idx) => (
+                      {displayEvidence.map((evidence, idx) => (
                         <li key={idx} className="leading-snug">{evidence}</li>
                       ))}
                     </ul>
@@ -168,14 +196,14 @@ export default function GeminiOpinionCard({ gemini, currentLang = 'en' }) {
                 )}
 
                 {/* Pathogen / Agronomic Causes */}
-                {possible_causes.length > 0 && (
+                {displayCauses.length > 0 && (
                   <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-1.5">
                     <div className="flex items-center gap-1.5 font-bold text-slate-900 text-[11px] uppercase tracking-wider">
                       <Microscope className="w-3.5 h-3.5 text-purple-700" />
-                      <span>{isHindi ? 'संभावित जैविक कारण' : 'Plausible Pathological Causes'}</span>
+                      <span>{t.plausibleCauses || 'Plausible Pathological Causes'}</span>
                     </div>
                     <ul className="list-disc list-inside space-y-1 text-slate-700 font-medium pl-1">
-                      {possible_causes.map((cause, idx) => (
+                      {displayCauses.map((cause, idx) => (
                         <li key={idx} className="leading-snug">{cause}</li>
                       ))}
                     </ul>

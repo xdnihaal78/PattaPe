@@ -41,7 +41,7 @@ export default function AudioButton({ textToRead, currentLang }) {
       {isPlaying ? (
         <>
           <VolumeX className="w-5 h-5 text-white stroke-[2.5]" />
-          <span>{t.stopAudio} (आवाज रोकें)</span>
+          <span>{t.stopAudio || 'Stop Audio'}</span>
         </>
       ) : (
         <>

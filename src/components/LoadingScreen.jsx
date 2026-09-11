@@ -25,39 +25,14 @@ export default function LoadingScreen({
 }) {
   const t = TRANSLATIONS[currentLang] || TRANSLATIONS.en;
 
-  // The 5 mandatory steps requested by user
-  const stepItems = [
-    {
-      id: 1,
-      title: 'Checking leaf symptoms',
-      sub: currentLang === 'hi' ? 'पत्ती के लक्षणों व धब्बों की जांच' : 'Scanning lesions, chlorosis & leaf surface',
-      icon: Target
-    },
-    {
-      id: 2,
-      title: 'Identifying possible disease',
-      sub: currentLang === 'hi' ? 'संभावित बीमारी व रोगाणु की पहचान' : 'Matching against 50,000+ crop pathogen samples',
-      icon: Microscope
-    },
-    {
-      id: 3,
-      title: 'Measuring affected area',
-      sub: currentLang === 'hi' ? 'प्रभावित पत्ती क्षेत्र का मापन' : 'Calculating damage percentage & leaf coverage',
-      icon: Crosshair
-    },
-    {
-      id: 4,
-      title: 'Checking 72-hour spread risk',
-      sub: currentLang === 'hi' ? '72 घंटे में फैलने के खतरे का विश्लेषण' : 'Assessing weather, moisture & spore propagation',
-      icon: Activity
-    },
-    {
-      id: 5,
-      title: 'Preparing advice',
-      sub: currentLang === 'hi' ? 'सटीक उपचार व कृषि सलाह तैयार' : 'Generating verified ICAR & KVK treatment protocol',
-      icon: FileCheck2
-    }
-  ];
+  // The 5 mandatory steps translated dynamically
+  const stepIcons = [Target, Microscope, Crosshair, Activity, FileCheck2];
+  const stepItems = (t.analyzingSteps || []).map((step, idx) => ({
+    id: idx + 1,
+    title: step.title,
+    sub: step.detail,
+    icon: stepIcons[idx] || Target
+  }));
 
   return (
     <div className="w-full max-w-md mx-auto bg-white rounded-2xl p-4 sm:p-5 border border-emerald-500/30 shadow-lg space-y-4 text-center relative overflow-hidden">
@@ -167,7 +142,7 @@ export default function LoadingScreen({
         {selectedCrop && (
           <div className="absolute top-2.5 right-2.5 z-20 bg-slate-950/85 backdrop-blur-xs text-white border border-slate-700 px-2.5 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 shadow-md">
             <span>{selectedCrop.icon}</span>
-            <span>{selectedCrop.name}</span>
+            <span>{selectedCrop.names_i18n?.[currentLang] || selectedCrop.name}</span>
           </div>
         )}
 
@@ -175,7 +150,7 @@ export default function LoadingScreen({
         <div className="absolute bottom-2 inset-x-2 z-20 bg-slate-950/85 backdrop-blur-xs border border-emerald-500/30 rounded-lg px-2.5 py-1 flex items-center justify-between text-[10px] text-emerald-200 font-semibold">
           <div className="flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-white">Bio-Engine</span>
+            <span className="text-white">{t.bioEngine || 'Bio-Engine'}</span>
           </div>
           <span className="text-emerald-400 font-mono text-[9px]">50K+ Pathogens</span>
         </div>
@@ -185,24 +160,21 @@ export default function LoadingScreen({
       {/* Main Text & Subtitle */}
       <div className="space-y-0.5 pt-0.5">
         <h1 className="text-xl sm:text-2xl font-black text-slate-900 m-0 tracking-tight flex items-center justify-center gap-1.5">
-          <span>Analyzing your crop...</span>
+          <span>{t.analyzingTitle || 'Analyzing your crop...'}</span>
           <Sparkles className="w-5 h-5 text-emerald-600 animate-pulse shrink-0" />
         </h1>
         <p className="text-xs sm:text-sm font-semibold text-slate-500 m-0">
-          This may take a few seconds
+          {t.analyzingSub || 'This may take a few seconds'}
         </p>
-        {currentLang === 'hi' && (
-          <p className="text-[11px] font-semibold text-emerald-700 m-0">
-            (कृपया कुछ सेकंड प्रतीक्षा करें)
-          </p>
-        )}
       </div>
 
       {/* Overall Animated Progress Bar */}
       <div className="space-y-1">
         <div className="flex items-center justify-between text-xs font-bold text-slate-600 px-0.5">
           <span className="text-emerald-800">
-            {isFinished ? 'Analysis Complete' : `Step ${Math.min(activeStep + 1, 5)} of 5`}
+            {isFinished 
+              ? (currentLang === 'hi' ? 'विश्लेषण पूर्ण' : currentLang === 'ta' ? 'ஆய்வு முடிந்தது' : currentLang === 'kn' ? 'ವಿಶ್ಲೇಷಣೆ ಪೂರ್ಣಗೊಂಡಿದೆ' : 'Analysis Complete')
+              : (currentLang === 'hi' ? `चरण ${Math.min(activeStep + 1, 5)} / 5` : currentLang === 'ta' ? `படி ${Math.min(activeStep + 1, 5)} / 5` : currentLang === 'kn' ? `ಹಂತ ${Math.min(activeStep + 1, 5)} / 5` : `Step ${Math.min(activeStep + 1, 5)} of 5`)}
           </span>
           <span className="font-mono text-emerald-700 font-black text-xs">
             {progress}%
