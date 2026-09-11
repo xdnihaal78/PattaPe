@@ -1131,15 +1131,21 @@ export async function getStats() {
 /**
  * Simulates: PATCH /cases/{id}/status
  */
-export async function updateCaseStatus(id, { status, notes, updatedDisease, labDetails }) {
+export async function updateCaseStatus(id, updatePayload) {
   const cases = loadStorage();
-  const index = cases.findIndex((c) => String(c.id) === String(id) || c.case_id === id);
+  const idStr = String(id).toLowerCase();
+  const index = cases.findIndex((c) => String(c.id).toLowerCase() === idStr || String(c.case_id).toLowerCase() === idStr);
   if (index === -1) return null;
 
   const current = cases[index];
-  current.status = status;
+  const { status, notes, updatedDisease, newSeverity, adjustedDosage, updatedAdvice, labDetails } = updatePayload;
+
+  if (status) current.status = status;
   if (notes) current.officer_notes = notes;
   if (updatedDisease) current.disease = updatedDisease;
+  if (newSeverity) current.severity = newSeverity;
+  if (adjustedDosage) current.recommended_treatment = adjustedDosage;
+  if (updatedAdvice) current.officer_advice = updatedAdvice;
   if (labDetails) current.lab_details = labDetails;
   current.updated_at = new Date().toISOString();
 
@@ -1152,7 +1158,9 @@ export async function updateCaseStatus(id, { status, notes, updatedDisease, labD
  * Reset to default 40 seed cases
  */
 export function resetSeedCases() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(SEED_CASES));
+  if (typeof localStorage !== 'undefined') {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(SEED_CASES));
+  }
   return SEED_CASES;
 }
 

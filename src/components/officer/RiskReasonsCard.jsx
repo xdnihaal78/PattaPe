@@ -99,13 +99,15 @@ function getRiskLevelMeta(risk) {
 export default function RiskReasonsCard({ caseData }) {
   const [expanded, setExpanded] = useState(true);
 
-  const risk = caseData?.risk || 'low';
+  const risk = caseData?.risk_72h?.level || caseData?.risk || 'low';
   const meta = getRiskLevelMeta(risk);
   const RiskIcon = meta.icon;
 
-  // Derive risk reasons from available data
-  const reasons = caseData?.risk_reasons || generateDefaultReasons(caseData);
-  const riskScore = caseData?.risk_score || deriveRiskScore(risk);
+  // Derive risk reasons from available data or fallback to contract schema
+  const reasons = (caseData?.risk_72h?.reasons && Array.isArray(caseData.risk_72h.reasons) && caseData.risk_72h.reasons.length > 0)
+    ? caseData.risk_72h.reasons
+    : (caseData?.risk_reasons || generateDefaultReasons(caseData));
+  const riskScore = caseData?.risk_72h?.score || caseData?.risk_score || deriveRiskScore(risk);
   const forecastText = caseData?.forecast_text || caseData?.weatherRisk?.forecastText || null;
   const forecast72h = caseData?.forecast_72h || null;
 

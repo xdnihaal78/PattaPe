@@ -169,10 +169,14 @@ export default function AIAdvisorySection({ caseData }) {
       {/* Accordion Sections */}
       <div className="divide-y divide-slate-200">
         {SECTION_META.map((section) => {
-          const content = advisory[section.key];
-          if (!content) return null;
-          const isExpanded = expandedSection === section.key;
+          const rawContent = advisory[section.key];
+          if (!rawContent) return null;
+          const isExpanded = expandedSection === section.key || expandedSection === 'all';
           const Icon = section.icon;
+
+          const previewText = Array.isArray(rawContent) 
+            ? rawContent.join('; ') 
+            : String(rawContent);
 
           return (
             <div key={section.key}>
@@ -196,7 +200,7 @@ export default function AIAdvisorySection({ caseData }) {
                     </div>
                     {!isExpanded && (
                       <p className="text-xs text-slate-500 font-semibold m-0 mt-0.5 line-clamp-1">
-                        {content.substring(0, 60)}...
+                        {previewText.slice(0, 80)}...
                       </p>
                     )}
                   </div>
@@ -212,9 +216,20 @@ export default function AIAdvisorySection({ caseData }) {
               {isExpanded && (
                 <div className={`px-4 sm:px-5 pb-5 bg-slate-50 border-t ${section.border}`}>
                   <div className={`mt-4 p-4 rounded-2xl border ${section.border} bg-white`}>
-                    <p className="text-sm sm:text-base font-bold text-slate-800 m-0 leading-relaxed">
-                      {content}
-                    </p>
+                    {Array.isArray(rawContent) ? (
+                      <ul className="space-y-2 m-0 p-0 list-none">
+                        {rawContent.map((item, idx) => (
+                          <li key={idx} className="flex items-start gap-2.5 text-sm sm:text-base font-bold text-slate-800 leading-relaxed">
+                            <span className="w-2 h-2 rounded-full bg-emerald-600 shrink-0 mt-2" />
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-sm sm:text-base font-bold text-slate-800 m-0 leading-relaxed whitespace-pre-line">
+                        {rawContent}
+                      </p>
+                    )}
                   </div>
                 </div>
               )}

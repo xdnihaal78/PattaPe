@@ -32,10 +32,11 @@ export default function TopPredictionsCard({
 
       {/* 3 Candidates List */}
       <div className="space-y-3">
-        {topPredictions.map((pred, index) => {
+        {topPredictions.slice(0, 3).map((pred, index) => {
           const rank = pred.rank || index + 1;
-          const diseaseName = pred.name || pred.diseaseName || 'Crop Disease';
-          const confidence = pred.confidence || 50;
+          const diseaseName = pred.disease || pred.name || pred.diseaseName || 'Crop Disease';
+          const rawConf = pred.confidence ?? pred.score ?? 50;
+          const confidence = rawConf <= 1 && rawConf > 0 ? Math.round(rawConf * 100) : Math.round(rawConf);
           const isPrimary = rank === 1;
           const isCurrentActive = currentConfirmedDisease 
             ? currentConfirmedDisease.toLowerCase() === diseaseName.toLowerCase()

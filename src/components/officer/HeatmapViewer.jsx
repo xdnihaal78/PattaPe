@@ -13,14 +13,18 @@ import {
 export default function HeatmapViewer({ 
   originalImage, 
   imageUrl,
+  heatmapImage,
+  heatmapUrl,
   affectedAreaPercentage = 50,
   cropName = 'Crop'
 }) {
-  const [viewMode, setViewMode] = useState('overlay'); // 'overlay' | 'side-by-side' | 'original' | 'heatmap'
+  const [viewMode, setViewMode] = useState('side-by-side'); // default 'side-by-side' for clear direct comparison
   const [overlayOpacity, setOverlayOpacity] = useState(65);
+  const [splitPosition, setSplitPosition] = useState(50);
   const [isZoomed, setIsZoomed] = useState(false);
 
-  const displayImage = imageUrl || originalImage || 'https://images.unsplash.com/photo-1536657464919-892534f60d6e?auto=format&fit=crop&w=800&q=80';
+  const displayOriginal = originalImage || imageUrl || 'https://images.unsplash.com/photo-1536657464919-892534f60d6e?auto=format&fit=crop&w=800&q=80';
+  const displayHeatmap = heatmapUrl || heatmapImage || displayOriginal;
 
   return (
     <div className="bg-white rounded-3xl border-2 border-slate-300 shadow-xl overflow-hidden p-5 space-y-4">
@@ -104,7 +108,7 @@ export default function HeatmapViewer({
         {viewMode === 'overlay' && (
           <div className="relative w-full h-full min-h-[340px] sm:min-h-[400px] flex items-center justify-center overflow-hidden">
             <img
-              src={displayImage}
+              src={displayOriginal}
               alt="Crop Leaf Diagnosis"
               className={`w-full h-full object-cover transition-transform duration-300 ${
                 isZoomed ? 'scale-125' : 'scale-100'
@@ -132,31 +136,45 @@ export default function HeatmapViewer({
 
         {/* MODE 2: Side-by-Side Mode */}
         {viewMode === 'side-by-side' && (
-          <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-2 p-2 bg-slate-900">
+          <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-3 p-3 bg-slate-900">
             {/* Original Leaf */}
-            <div className="relative rounded-xl overflow-hidden border border-slate-700 aspect-video md:aspect-square flex items-center justify-center bg-slate-950">
+            <div className="relative rounded-2xl overflow-hidden border border-slate-700 aspect-video md:aspect-square flex items-center justify-center bg-slate-950 shadow-inner group">
               <img
-                src={displayImage}
-                alt="Original Leaf"
-                className="w-full h-full object-cover"
+                src={displayOriginal}
+                alt="Original Farmer Leaf"
+                className={`w-full h-full object-cover transition-transform duration-300 ${
+                  isZoomed ? 'scale-125' : 'scale-100'
+                }`}
               />
-              <div className="absolute bottom-2 left-2 bg-slate-900/90 text-white text-xs font-black px-3 py-1.5 rounded-lg border border-slate-700">
-                1. Original Leaf Photo
+              <div className="absolute top-3 left-3 bg-slate-900/90 backdrop-blur-md text-white text-xs font-black px-3.5 py-1.5 rounded-xl border border-slate-700 shadow-md flex items-center gap-1.5">
+                <Eye className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Original Farmer Leaf Image</span>
+              </div>
+              <div className="absolute bottom-2 left-2 right-2 bg-slate-950/80 backdrop-blur-sm text-slate-300 text-[11px] font-semibold px-2.5 py-1 rounded-lg border border-slate-800 text-center">
+                High-resolution field photo uploaded by farmer
               </div>
             </div>
 
             {/* AI Heatmap */}
-            <div className="relative rounded-xl overflow-hidden border border-slate-700 aspect-video md:aspect-square flex items-center justify-center bg-slate-950">
+            <div className="relative rounded-2xl overflow-hidden border border-red-900/60 aspect-video md:aspect-square flex items-center justify-center bg-slate-950 shadow-inner group">
               <img
-                src={displayImage}
-                alt="Heatmap View"
-                className="w-full h-full object-cover contrast-200 hue-rotate-180 brightness-90 saturate-200"
+                src={displayHeatmap}
+                alt="AI Grad-CAM Heatmap"
+                className={`w-full h-full object-cover contrast-200 hue-rotate-180 brightness-95 saturate-200 transition-transform duration-300 ${
+                  isZoomed ? 'scale-125' : 'scale-100'
+                }`}
               />
+              {/* Thermal color map hotspot shader */}
               <div className="absolute inset-0 bg-red-600/30 backdrop-hue-rotate-90 pointer-events-none flex items-center justify-center">
-                <div className="w-36 h-36 rounded-full bg-red-500/60 filter blur-xl animate-pulse" />
+                <div className="w-44 h-44 rounded-full bg-red-500/60 filter blur-2xl animate-pulse" />
+                <div className="absolute w-24 h-24 rounded-full bg-yellow-400/50 filter blur-lg" />
               </div>
-              <div className="absolute bottom-2 left-2 bg-red-950/90 text-amber-300 text-xs font-black px-3 py-1.5 rounded-lg border border-red-800">
-                2. AI Disease Heatmap
+              <div className="absolute top-3 left-3 bg-red-950/90 backdrop-blur-md text-amber-300 text-xs font-black px-3.5 py-1.5 rounded-xl border border-red-800 shadow-md flex items-center gap-1.5">
+                <Flame className="w-3.5 h-3.5 text-red-400 animate-pulse" />
+                <span>AI Heatmap Image (Grad-CAM)</span>
+              </div>
+              <div className="absolute bottom-2 left-2 right-2 bg-red-950/80 backdrop-blur-sm text-amber-200 text-[11px] font-semibold px-2.5 py-1 rounded-lg border border-red-900/70 text-center">
+                Red/Yellow highlights neural network focus lesions ({affectedAreaPercentage}% affected)
               </div>
             </div>
           </div>
@@ -166,14 +184,14 @@ export default function HeatmapViewer({
         {viewMode === 'original' && (
           <div className="relative w-full h-full min-h-[340px] sm:min-h-[400px] flex items-center justify-center">
             <img
-              src={displayImage}
+              src={displayOriginal}
               alt="Original Leaf Photo"
               className={`w-full h-full object-cover transition-transform duration-300 ${
                 isZoomed ? 'scale-125' : 'scale-100'
               }`}
             />
             <div className="absolute top-3 left-3 bg-slate-900/85 backdrop-blur-md text-white text-xs sm:text-sm font-bold px-3 py-1.5 rounded-xl border border-slate-700">
-              Original Leaf Photo from Farmer
+              Original Farmer Leaf Image
             </div>
           </div>
         )}
@@ -182,7 +200,7 @@ export default function HeatmapViewer({
         {viewMode === 'heatmap' && (
           <div className="relative w-full h-full min-h-[340px] sm:min-h-[400px] flex items-center justify-center bg-slate-950">
             <img
-              src={displayImage}
+              src={displayHeatmap}
               alt="Heatmap Only"
               className="w-full h-full object-cover contrast-200 hue-rotate-180 brightness-90 saturate-200"
             />
@@ -190,7 +208,7 @@ export default function HeatmapViewer({
               <div className="w-52 h-52 rounded-full bg-red-500/70 filter blur-2xl animate-pulse" />
             </div>
             <div className="absolute top-3 left-3 bg-red-950/90 text-amber-300 text-xs sm:text-sm font-black px-3 py-1.5 rounded-xl border border-red-800">
-              AI Disease Heatmap Alone
+              AI Disease Heatmap Image (Grad-CAM)
             </div>
           </div>
         )}

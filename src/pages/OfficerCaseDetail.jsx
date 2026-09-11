@@ -246,14 +246,78 @@ function OfficerActionConsole({ caseData, onAction }) {
         </div>
       </div>
 
-      {/* Status indicator if already processed */}
-      {isProcessed && (
-        <div className="mx-5 mt-4 p-3.5 bg-slate-800/60 border border-slate-700 rounded-2xl flex items-start gap-2.5">
-          <Info className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+      {/* Visual Officer Validation Loop Status */}
+      {caseData.status === 'Confirmed' && (
+        <div className="mx-5 mt-4 p-4 bg-emerald-950/80 border-2 border-emerald-500 rounded-2xl flex items-start gap-3 shadow-lg animate-in fade-in">
+          <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <span className="text-xs font-black text-emerald-400 uppercase tracking-wider block">
+              Validation Loop Complete: Confirmed
+            </span>
+            <p className="text-sm font-black text-white m-0 mt-0.5">
+              Approved: {caseData.disease}
+            </p>
+            {caseData.officer_notes && (
+              <p className="text-xs font-medium text-emerald-200/90 m-0 mt-1 italic">
+                "{caseData.officer_notes}"
+              </p>
+            )}
+            <span className="text-[11px] font-bold text-emerald-400/80 block mt-1.5">
+              Official verification logged • Farmer notified
+            </span>
+          </div>
+        </div>
+      )}
+
+      {caseData.status === 'Overridden' && (
+        <div className="mx-5 mt-4 p-4 bg-purple-950/80 border-2 border-purple-500 rounded-2xl flex items-start gap-3 shadow-lg animate-in fade-in">
+          <AlertTriangle className="w-5 h-5 text-purple-300 shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <span className="text-xs font-black text-purple-300 uppercase tracking-wider block">
+              Validation Loop: Diagnosis Overridden
+            </span>
+            <p className="text-sm font-black text-white m-0 mt-0.5">
+              Revised To: {caseData.disease} ({caseData.severity || 'moderate'})
+            </p>
+            {caseData.officer_notes && (
+              <p className="text-xs font-medium text-purple-200/90 m-0 mt-1 italic">
+                Reason: "{caseData.officer_notes}"
+              </p>
+            )}
+            <span className="text-[11px] font-bold text-purple-400/80 block mt-1.5">
+              Officer correction active • Overrides AI model prediction
+            </span>
+          </div>
+        </div>
+      )}
+
+      {caseData.status === 'Lab Test Requested' && (
+        <div className="mx-5 mt-4 p-4 bg-rose-950/80 border-2 border-rose-500 rounded-2xl flex items-start gap-3 shadow-lg animate-in fade-in">
+          <FlaskConical className="w-5 h-5 text-rose-300 shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <span className="text-xs font-black text-rose-300 uppercase tracking-wider block">
+              Validation Loop: Lab Requisition Dispatched
+            </span>
+            <p className="text-sm font-black text-white m-0 mt-0.5">
+              Specimen: {caseData.lab_details?.sampleType || 'Leaf Tissue Sample'}
+            </p>
+            <p className="text-xs font-semibold text-rose-200/90 m-0 mt-0.5">
+              Tracking: <span className="font-mono font-bold text-white">{caseData.lab_details?.lab_id || 'LAB-REQ'}</span> • Priority: {caseData.lab_details?.urgency || 'Urgent'}
+            </p>
+            <span className="text-[11px] font-bold text-rose-400/80 block mt-1.5">
+              Field scout assigned for sample collection
+            </span>
+          </div>
+        </div>
+      )}
+
+      {caseData.status === 'Pending Review' && (
+        <div className="mx-5 mt-4 p-3.5 bg-amber-950/50 border border-amber-500/50 rounded-2xl flex items-start gap-2.5">
+          <Clock className="w-4 h-4 text-amber-400 shrink-0 mt-0.5 animate-pulse" />
           <div>
-            <span className="text-xs font-black text-amber-400 block">Case Already Processed</span>
-            <p className="text-xs font-semibold text-slate-400 m-0 mt-0.5">
-              Status: <span className="text-white font-black">{caseData.status}</span>. You can still update the validation.
+            <span className="text-xs font-black text-amber-400 block">Pending Extension Officer Review</span>
+            <p className="text-xs font-semibold text-slate-300 m-0 mt-0.5">
+              Review AI diagnosis and select one of the 3 actions below to certify this case.
             </p>
           </div>
         </div>
@@ -459,11 +523,12 @@ export default function OfficerCaseDetail() {
           {/* Back + Breadcrumb */}
           <div className="flex items-center gap-2.5 text-sm font-extrabold text-slate-500">
             <Link
+              id="btn-back-to-dashboard"
               to="/officer"
               className="flex items-center gap-1.5 bg-white border-2 border-slate-300 hover:border-emerald-500 hover:text-emerald-800 px-3.5 py-2 rounded-xl shadow-sm transition"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span>Dashboard</span>
+              <span>Back to Dashboard</span>
             </Link>
             <span className="text-slate-400 hidden sm:inline">›</span>
             <span className="hidden sm:inline text-slate-700 font-black">
@@ -473,7 +538,7 @@ export default function OfficerCaseDetail() {
 
           {/* Case ID + Status */}
           <div className="flex items-center gap-3">
-            <div className="hidden sm:flex items-center gap-2 bg-white border border-slate-200 px-3.5 py-2 rounded-xl text-sm">
+            <div className="flex items-center gap-2 bg-white border border-slate-200 px-3.5 py-2 rounded-xl text-sm shadow-sm">
               <Leaf className="w-4 h-4 text-emerald-700" />
               <span className="font-black text-slate-900">{caseData.case_id || `Case #${caseData.id}`}</span>
             </div>
@@ -562,6 +627,7 @@ export default function OfficerCaseDetail() {
             <HeatmapViewer
               originalImage={displayImage}
               imageUrl={displayImage}
+              heatmapUrl={caseData.heatmap_url}
               affectedAreaPercentage={caseData.affected_pct || 40}
               cropName={caseData.crop}
             />
