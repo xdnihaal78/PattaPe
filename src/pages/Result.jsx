@@ -19,6 +19,7 @@ import RiskCard from '../components/RiskCard';
 import GeminiOpinionCard from '../components/GeminiOpinionCard';
 import AdvisoryAccordion from '../components/AdvisoryAccordion';
 import AudioButton from '../components/AudioButton';
+import FarmerErrorState from '../components/FarmerErrorState';
 import { escalateToOfficer } from '../services/api';
 import { TRANSLATIONS } from '../utils/helpers';
 
@@ -31,16 +32,14 @@ export default function Result({ diagnosis, selectedCrop, uploadedImage, current
 
   if (!diagnosis) {
     return (
-      <div className="w-full max-w-md mx-auto px-4 py-12 text-center space-y-3">
-        <h2 className="text-xl font-black text-slate-800">{t.noDiagnosisTitle || 'No Diagnosis Found'}</h2>
-        <p className="text-sm text-slate-600 font-semibold">{t.noDiagnosisSub || 'Please upload a leaf photo to analyze first.'}</p>
-        <button
-          onClick={() => navigate('/')}
-          className="px-5 py-2.5 bg-emerald-700 text-white rounded-xl font-bold text-base shadow-sm"
-        >
-          {t.startDiagnosis || 'Start Diagnosis'}
-        </button>
-      </div>
+      <FarmerErrorState
+        type="no_image"
+        currentLang={currentLang}
+        customTitle={t.noDiagnosisTitle || 'No Diagnosis Found'}
+        customMessage={t.noDiagnosisSub || 'Please upload a leaf photo to analyze first.'}
+        onChooseAnotherPhoto={() => navigate('/upload')}
+        onGoBack={() => navigate('/')}
+      />
     );
   }
 

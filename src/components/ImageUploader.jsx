@@ -1,5 +1,6 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { Camera, Upload, RotateCcw, CheckCircle, Sparkles } from 'lucide-react';
+import FarmerErrorState from './FarmerErrorState';
 import { TRANSLATIONS } from '../utils/helpers';
 
 const SAMPLE_LEAVES = [
@@ -18,6 +19,7 @@ const SAMPLE_LEAVES = [
 export default function ImageUploader({ selectedImage, onImageSelected, currentLang = 'en' }) {
   const fileInputRef = useRef(null);
   const cameraInputRef = useRef(null);
+  const [uploadError, setUploadError] = useState(false);
 
   const t = TRANSLATIONS[currentLang] || TRANSLATIONS.en;
 
@@ -47,13 +49,39 @@ export default function ImageUploader({ selectedImage, onImageSelected, currentL
   const tipsList = photoTips[currentLang] || photoTips.en;
 
   const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
+    setUploadError(false);
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Check valid image type
+    if (file.type && !file.type.startsWith('image/')) {
+      setUploadError(true);
+      return;
+    }
+
+    // Check non-zero size
+    if (file.size === 0) {
+      setUploadError(true);
+      return;
+    }
+
+    try {
       const reader = new FileReader();
       reader.onloadend = () => {
-        onImageSelected(reader.result);
+        if (reader.result) {
+          setUploadError(false);
+          onImageSelected(reader.result);
+        } else {
+          setUploadError(true);
+        }
+      };
+      reader.onerror = () => {
+        setUploadError(true);
       };
       reader.readAsDataURL(file);
+    } catch (err) {
+      console.error('File read error:', err);
+      setUploadError(true);
     }
   };
 
@@ -76,6 +104,17 @@ export default function ImageUploader({ selectedImage, onImageSelected, currentL
         onChange={handleFileChange}
         className="hidden"
       />
+
+      {/* Upload Error Banner */}
+      {uploadError && (
+        <FarmerErrorState
+          type="upload_failed"
+          compact={true}
+          currentLang={currentLang}
+          onChooseAnotherPhoto={() => fileInputRef.current?.click()}
+          onRetry={() => cameraInputRef.current?.click()}
+        />
+      )}
 
       {/* If Image Selected - Preview & Retake Button */}
       {selectedImage ? (

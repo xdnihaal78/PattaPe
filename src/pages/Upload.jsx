@@ -1,24 +1,47 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Sparkles } from 'lucide-react';
+import { ArrowLeft, Sparkles, AlertCircle } from 'lucide-react';
 import ImageUploader from '../components/ImageUploader';
+import FarmerErrorState from '../components/FarmerErrorState';
 import { TRANSLATIONS } from '../utils/helpers';
 
 export default function Upload({ selectedCrop, uploadedImage, onImageSelected, currentLang = 'en' }) {
   const navigate = useNavigate();
+  const [showImageAlert, setShowImageAlert] = useState(false);
   const t = TRANSLATIONS[currentLang] || TRANSLATIONS.en;
+
+  // 1. Error state: No Crop Selected
+  if (!selectedCrop) {
+    return (
+      <FarmerErrorState
+        type="no_crop"
+        currentLang={currentLang}
+        onChooseCrop={() => navigate('/')}
+        onGoBack={() => navigate('/')}
+      />
+    );
+  }
 
   const cropTitle = selectedCrop?.names_i18n?.[currentLang] || selectedCrop?.name;
 
   const handleAnalyzeClick = () => {
-    if (uploadedImage) {
-      try {
-        localStorage.setItem('pattape_temp_image', uploadedImage);
-      } catch (e) {
-        console.error(e);
-      }
-      navigate('/analyzing');
+    // 2. Error state: No Image Selected
+    if (!uploadedImage) {
+      setShowImageAlert(true);
+      return;
     }
+
+    try {
+      localStorage.setItem('pattape_temp_image', uploadedImage);
+    } catch (e) {
+      console.error(e);
+    }
+    navigate('/analyzing');
+  };
+
+  const handleImageChange = (img) => {
+    setShowImageAlert(false);
+    onImageSelected(img);
   };
 
   return (
@@ -35,12 +58,10 @@ export default function Upload({ selectedCrop, uploadedImage, onImageSelected, c
           <span>{t.back || 'Back'}</span>
         </button>
 
-        {selectedCrop && (
-          <div className="bg-emerald-50 text-emerald-950 font-bold px-3 py-1 rounded-xl border border-emerald-300 flex items-center gap-1.5 text-xs sm:text-sm shadow-xs">
-            <span className="text-base sm:text-lg">{selectedCrop.icon}</span>
-            <span>{cropTitle}</span>
-          </div>
-        )}
+        <div className="bg-emerald-50 text-emerald-950 font-bold px-3 py-1 rounded-xl border border-emerald-300 flex items-center gap-1.5 text-xs sm:text-sm shadow-xs">
+          <span className="text-base sm:text-lg">{selectedCrop.icon}</span>
+          <span>{cropTitle}</span>
+        </div>
       </div>
 
       {/* Page Heading & Subtitle */}
@@ -53,10 +74,21 @@ export default function Upload({ selectedCrop, uploadedImage, onImageSelected, c
         </p>
       </div>
 
+      {/* No Image Warning Banner */}
+      {showImageAlert && !uploadedImage && (
+        <div className="p-3.5 bg-amber-50 border-2 border-amber-400 rounded-2xl flex items-start gap-2.5 text-xs sm:text-sm font-bold text-amber-950 animate-in fade-in">
+          <AlertCircle className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
+          <div>
+            <span className="font-black block">Leaf Photo Needed</span>
+            <span>Please take a photo with your camera or select one from your phone before analyzing.</span>
+          </div>
+        </div>
+      )}
+
       {/* Large Image Upload Area & Photo Tips */}
       <ImageUploader
         selectedImage={uploadedImage}
-        onImageSelected={onImageSelected}
+        onImageSelected={handleImageChange}
         currentLang={currentLang}
       />
 
@@ -65,15 +97,14 @@ export default function Upload({ selectedCrop, uploadedImage, onImageSelected, c
         <button
           type="button"
           onClick={handleAnalyzeClick}
-          disabled={!uploadedImage}
           className={`w-full min-h-[48px] font-black rounded-2xl p-3 text-base flex items-center justify-center gap-2 shadow-xl transition-all ${
             uploadedImage
               ? 'bg-emerald-700 hover:bg-emerald-800 active:bg-emerald-900 text-white border border-emerald-800 focus:ring-2 focus:ring-emerald-400 active:scale-98'
-              : 'bg-slate-300 text-slate-500 border border-slate-400 cursor-not-allowed opacity-60'
+              : 'bg-amber-500 hover:bg-amber-600 text-slate-950 border-2 border-amber-400'
           }`}
         >
           <Sparkles className="w-5 h-5 text-amber-300" />
-          <span>{t.analyzeMyCrop || 'Analyze My Crop'}</span>
+          <span>{uploadedImage ? (t.analyzeMyCrop || 'Analyze My Crop') : 'Choose a Photo Above'}</span>
         </button>
       </div>
 

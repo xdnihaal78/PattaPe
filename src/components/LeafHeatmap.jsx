@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Eye, Flame, Image as ImageIcon } from 'lucide-react';
+import { Eye, Flame, Image as ImageIcon, Info, RotateCcw } from 'lucide-react';
+import FarmerErrorState from './FarmerErrorState';
 import { TRANSLATIONS } from '../utils/helpers';
 
 /**
@@ -7,7 +8,7 @@ import { TRANSLATIONS } from '../utils/helpers';
  * Displays:
  * - The uploaded farmer leaf image when available
  * - The AI heatmap image from heatmap_url when available
- * Full multi-language support (en, hi, ta, kn).
+ * Handles 6. Heatmap image unavailable with friendly fallback and recovery action.
  */
 export default function LeafHeatmap({ uploadedImage, heatmapUrl, currentLang = 'en' }) {
   const [activeMode, setActiveMode] = useState('standard'); // 'standard' | 'heatmap'
@@ -20,10 +21,15 @@ export default function LeafHeatmap({ uploadedImage, heatmapUrl, currentLang = '
   const displayImage = uploadedImage || fallbackImage;
 
   // Has a valid heatmap url
+  const isHeatmapUnavailable = !heatmapUrl || heatmapImageError;
   const hasHeatmap = Boolean(heatmapUrl && !heatmapImageError);
 
+  const handleToggleMode = () => {
+    setActiveMode((prev) => (prev === 'standard' ? 'heatmap' : 'standard'));
+  };
+
   return (
-    <div className="bg-white rounded-2xl p-3 sm:p-4 border border-slate-200/90 shadow-sm space-y-2">
+    <div className="bg-white rounded-2xl p-3 sm:p-4 border border-slate-200/90 shadow-sm space-y-2.5">
       
       {/* Container with leaf view & heatmap toggle */}
       <div className="relative rounded-xl overflow-hidden border border-slate-200 bg-slate-950 aspect-[16/9] max-h-52 flex items-center justify-center select-none group">
@@ -53,11 +59,20 @@ export default function LeafHeatmap({ uploadedImage, heatmapUrl, currentLang = '
           </div>
         )}
 
-        {/* Fallback CSS Heatmap simulation */}
-        {!hasHeatmap && activeMode === 'heatmap' && (
-          <div className="absolute inset-0 z-10 bg-red-600/25 backdrop-hue-rotate-90 pointer-events-none flex items-center justify-center animate-in fade-in">
-            <div className="w-20 h-20 rounded-full bg-red-500/45 animate-ping border-2 border-amber-300" />
-            <div className="absolute top-1/4 left-1/3 w-12 h-12 rounded-full bg-amber-500/50 animate-pulse border border-red-400" />
+        {/* Fallback Simulation when heatmap image is unavailable */}
+        {isHeatmapUnavailable && activeMode === 'heatmap' && (
+          <div className="absolute inset-0 z-10 bg-slate-950/80 backdrop-blur-xs flex flex-col items-center justify-center p-4 text-center space-y-2 animate-in fade-in">
+            <ImageIcon className="w-8 h-8 text-amber-400" />
+            <p className="text-xs font-bold text-slate-200 max-w-xs m-0">
+              Visual heatmap is unavailable for this photo. The original photo is shown.
+            </p>
+            <button
+              type="button"
+              onClick={() => setActiveMode('standard')}
+              className="px-3 py-1 bg-white text-slate-900 font-black text-xs rounded-lg shadow-sm"
+            >
+              View Original Leaf
+            </button>
           </div>
         )}
 
@@ -80,7 +95,7 @@ export default function LeafHeatmap({ uploadedImage, heatmapUrl, currentLang = '
         <div className="absolute top-2.5 right-2.5 z-20">
           <button
             type="button"
-            onClick={() => setActiveMode(prev => prev === 'standard' ? 'heatmap' : 'standard')}
+            onClick={handleToggleMode}
             className={`min-h-[34px] px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-md transition-transform active:scale-95 border ${
               activeMode === 'heatmap'
                 ? 'bg-amber-500 text-slate-950 border-amber-400 ring-1 ring-amber-300 font-extrabold'
@@ -104,10 +119,22 @@ export default function LeafHeatmap({ uploadedImage, heatmapUrl, currentLang = '
         {/* Bottom bar */}
         <div className="absolute bottom-2 inset-x-2 z-20 bg-slate-950/75 backdrop-blur-xs rounded-lg px-2.5 py-0.5 flex items-center justify-between text-[10px] text-slate-300 font-medium">
           <span>{t.leafTissueScan || 'Leaf Tissue Diagnostic Scan'}</span>
-          <span className="text-emerald-400 font-semibold">{t.activeSensor || 'Active Sensor'}</span>
+          <span className="text-emerald-400 font-semibold">
+            {isHeatmapUnavailable && activeMode === 'heatmap' ? 'Heatmap Offline' : (t.activeSensor || 'Active Sensor')}
+          </span>
         </div>
 
       </div>
+
+      {/* Notice when heatmap image is unavailable */}
+      {isHeatmapUnavailable && activeMode === 'heatmap' && (
+        <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl flex items-start gap-2 text-xs text-blue-950 font-semibold animate-in fade-in">
+          <Info className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+          <span>
+            AI Heatmap image unavailable for this leaf. Your disease diagnosis, severity score, and treatment guide below are 100% complete.
+          </span>
+        </div>
+      )}
 
     </div>
   );

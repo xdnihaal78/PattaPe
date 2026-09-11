@@ -1,19 +1,21 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import LoadingScreen from '../components/LoadingScreen';
+import FarmerErrorState from '../components/FarmerErrorState';
 import { analyzeCropImage } from '../services/api';
-import { MOCK_CROPS, MOCK_PREDICTION_RESPONSE } from '../services/mockData';
+import { MOCK_PREDICTION_RESPONSE } from '../services/mockData';
 
-export default function Analyzing({ selectedCrop, uploadedImage, onDiagnosisComplete, currentLang }) {
+export default function Analyzing({ selectedCrop, uploadedImage, onDiagnosisComplete, currentLang = 'en' }) {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   // Recover state from localStorage if user navigated directly or refreshed
   const resolvedCrop = selectedCrop || (() => {
     try {
       const saved = localStorage.getItem('pattape_selected_crop');
-      return saved ? JSON.parse(saved) : MOCK_CROPS[0];
+      return saved ? JSON.parse(saved) : null;
     } catch {
-      return MOCK_CROPS[0];
+      return null;
     }
   })();
 
@@ -28,103 +30,177 @@ export default function Analyzing({ selectedCrop, uploadedImage, onDiagnosisComp
   const [activeStep, setActiveStep] = useState(0);
   const [progress, setProgress] = useState(18);
   const [isFinished, setIsFinished] = useState(false);
+  const [errorType, setErrorType] = useState(null); // 'api_failed' | 'timeout' | null
+  const [simulatedMode, setSimulatedMode] = useState(searchParams.get('simulate_error') || null);
 
-  // Keep ref to hold diagnosis data safely
   const diagnosisRef = useRef(null);
+  const timeoutsRef = useRef([]);
 
-  useEffect(() => {
-    let isMounted = true;
-    const timeouts = [];
+  const clearAllTimeouts = () => {
+    timeoutsRef.current.forEach(clearTimeout);
+    timeoutsRef.current = [];
+  };
 
-    // 1. Trigger simulated API call with mock prediction data
+  const runAnalysis = useCallback(() => {
+    if (!resolvedCrop || !resolvedImage) return;
+
+    clearAllTimeouts();
+    setErrorType(null);
+    setActiveStep(0);
+    setProgress(18);
+    setIsFinished(false);
+    diagnosisRef.current = null;
+
     const cropId = resolvedCrop?.id || 'rice';
-    analyzeCropImage(cropId, resolvedImage)
+
+    // 1. Invoke Prediction API (supporting timeout & simulated error modes)
+    const apiPromise = analyzeCropImage(cropId, resolvedImage, {
+      simulate: simulatedMode || undefined,
+      timeoutMs: 8000
+    });
+
+    apiPromise
       .then((res) => {
-        if (isMounted) {
-          diagnosisRef.current = res.data;
-        }
+        diagnosisRef.current = res.data;
       })
       .catch((err) => {
-        console.error('Analysis error:', err);
-        if (isMounted) {
-          diagnosisRef.current = MOCK_PREDICTION_RESPONSE;
+        console.warn('Plant analysis caught error:', err);
+        clearAllTimeouts();
+        if (err.isTimeout || err.code === 'TIMEOUT') {
+          setErrorType('timeout');
+        } else {
+          setErrorType('api_failed');
         }
       });
 
-    // 2. Animate the 5 steps one by one over ~2 seconds
-    // Step 0: 0ms -> Checking leaf symptoms (progress 18%)
-    // Step 1: 420ms -> Identifying possible disease (progress 38%)
-    timeouts.push(
-      setTimeout(() => {
-        if (isMounted) {
-          setActiveStep(1);
-          setProgress(38);
-        }
-      }, 420)
-    );
+    // 2. Animate 5 steps progressively
+    const t1 = setTimeout(() => {
+      setActiveStep(1);
+      setProgress(38);
+    }, 420);
 
-    // Step 2: 840ms -> Measuring affected area (progress 60%)
-    timeouts.push(
-      setTimeout(() => {
-        if (isMounted) {
-          setActiveStep(2);
-          setProgress(60);
-        }
-      }, 840)
-    );
+    const t2 = setTimeout(() => {
+      setActiveStep(2);
+      setProgress(60);
+    }, 840);
 
-    // Step 3: 1260ms -> Checking 72-hour spread risk (progress 78%)
-    timeouts.push(
-      setTimeout(() => {
-        if (isMounted) {
-          setActiveStep(3);
-          setProgress(78);
-        }
-      }, 1260)
-    );
+    const t3 = setTimeout(() => {
+      setActiveStep(3);
+      setProgress(78);
+    }, 1260);
 
-    // Step 4: 1680ms -> Preparing advice (progress 92%)
-    timeouts.push(
-      setTimeout(() => {
-        if (isMounted) {
-          setActiveStep(4);
-          setProgress(92);
-        }
-      }, 1680)
-    );
+    const t4 = setTimeout(() => {
+      setActiveStep(4);
+      setProgress(92);
+    }, 1680);
 
-    // Step 5: 2100ms -> All 5 steps complete (progress 100%)
-    timeouts.push(
-      setTimeout(() => {
-        if (isMounted) {
-          setActiveStep(5);
-          setProgress(100);
-          setIsFinished(true);
+    const t5 = setTimeout(() => {
+      setActiveStep(5);
+      setProgress(100);
+      setIsFinished(true);
 
-          // Deliver the diagnosis result
-          const finalData = diagnosisRef.current || MOCK_PREDICTION_RESPONSE;
-          onDiagnosisComplete?.(finalData);
-        }
-      }, 2100)
-    );
+      const finalData = diagnosisRef.current || MOCK_PREDICTION_RESPONSE;
+      onDiagnosisComplete?.(finalData);
+    }, 2100);
 
-    // 3. Automatically navigate to /result at ~2450ms (~2s total loading experience)
-    timeouts.push(
-      setTimeout(() => {
-        if (isMounted) {
-          navigate('/result');
-        }
-      }, 2450)
-    );
+    const t6 = setTimeout(() => {
+      navigate('/result');
+    }, 2450);
 
+    timeoutsRef.current = [t1, t2, t3, t4, t5, t6];
+  }, [resolvedCrop, resolvedImage, simulatedMode, navigate, onDiagnosisComplete]);
+
+  useEffect(() => {
+    runAnalysis();
     return () => {
-      isMounted = false;
-      timeouts.forEach(clearTimeout);
+      clearAllTimeouts();
     };
-  }, [resolvedCrop?.id, resolvedImage, navigate, onDiagnosisComplete]);
+  }, [runAnalysis]);
 
+  // 1. Error state: No Crop Selected
+  if (!resolvedCrop) {
+    return (
+      <FarmerErrorState
+        type="no_crop"
+        currentLang={currentLang}
+        onChooseCrop={() => navigate('/')}
+        onGoBack={() => navigate('/')}
+      />
+    );
+  }
+
+  // 2. Error state: No Image Selected
+  if (!resolvedImage) {
+    return (
+      <FarmerErrorState
+        type="no_image"
+        currentLang={currentLang}
+        onChooseAnotherPhoto={() => navigate('/upload')}
+        onGoBack={() => navigate('/upload')}
+      />
+    );
+  }
+
+  // 4 & 5. Error state: Prediction API Failure OR Backend Timeout
+  if (errorType) {
+    return (
+      <div className="space-y-4">
+        <FarmerErrorState
+          type={errorType}
+          currentLang={currentLang}
+          onRetry={() => {
+            setSimulatedMode(null);
+            runAnalysis();
+          }}
+          onChooseAnotherPhoto={() => navigate('/upload')}
+          onGoBack={() => navigate('/upload')}
+        />
+
+        {/* Demo-Friendly Mode Switcher */}
+        <div className="max-w-xs mx-auto text-center pt-2">
+          <p className="text-[11px] font-bold text-slate-400 mb-1.5 uppercase tracking-wider">
+            Demo Error Switcher
+          </p>
+          <div className="flex justify-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setSimulatedMode(null);
+                runAnalysis();
+              }}
+              className="px-2.5 py-1 text-xs font-bold bg-slate-200 text-slate-800 rounded-lg hover:bg-slate-300 transition"
+            >
+              Normal Analysis
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setSimulatedMode('api_failed');
+                runAnalysis();
+              }}
+              className="px-2.5 py-1 text-xs font-bold bg-red-100 text-red-800 rounded-lg hover:bg-red-200 transition"
+            >
+              API Error
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setSimulatedMode('timeout');
+                runAnalysis();
+              }}
+              className="px-2.5 py-1 text-xs font-bold bg-amber-100 text-amber-800 rounded-lg hover:bg-amber-200 transition"
+            >
+              Timeout
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Normal Loading Progress Screen
   return (
-    <div className="w-full max-w-xl mx-auto px-4 py-6 sm:py-10 pb-28">
+    <div className="w-full max-w-xl mx-auto px-4 py-6 sm:py-10 pb-28 space-y-4">
       <LoadingScreen 
         leafImage={resolvedImage} 
         selectedCrop={resolvedCrop}
@@ -133,6 +209,32 @@ export default function Analyzing({ selectedCrop, uploadedImage, onDiagnosisComp
         progress={progress}
         isFinished={isFinished}
       />
+
+      {/* Discreet Demo Error Testing Bar */}
+      <div className="flex justify-center items-center gap-2 pt-4 opacity-50 hover:opacity-100 transition">
+        <span className="text-[10px] font-bold text-slate-400">Demo test:</span>
+        <button
+          type="button"
+          onClick={() => {
+            clearAllTimeouts();
+            setErrorType('api_failed');
+          }}
+          className="text-[10px] font-bold text-red-600 hover:underline"
+        >
+          [Simulate API Error]
+        </button>
+        <span className="text-slate-300">•</span>
+        <button
+          type="button"
+          onClick={() => {
+            clearAllTimeouts();
+            setErrorType('timeout');
+          }}
+          className="text-[10px] font-bold text-amber-600 hover:underline"
+        >
+          [Simulate Timeout]
+        </button>
+      </div>
     </div>
   );
 }
