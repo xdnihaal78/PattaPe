@@ -16,6 +16,7 @@ import OtherDiagnosesCard from '../components/OtherDiagnosesCard';
 import LeafHeatmap from '../components/LeafHeatmap';
 import AffectedAreaCard from '../components/AffectedAreaCard';
 import RiskCard from '../components/RiskCard';
+import GeminiOpinionCard from '../components/GeminiOpinionCard';
 import AdvisoryAccordion from '../components/AdvisoryAccordion';
 import AudioButton from '../components/AudioButton';
 import { escalateToOfficer } from '../services/api';
@@ -60,10 +61,14 @@ export default function Result({ diagnosis, selectedCrop, uploadedImage, current
   const primaryAction = diagnosis.advisory?.do_now?.[0] || diagnosis.advisory?.chemical?.[0]?.detail || '';
   const riskLevel = diagnosis.risk_72h?.level || diagnosis.weatherRisk?.level || 'Moderate';
 
-  // Construct TTS read string
-  const speechText = currentLang === 'hi'
-    ? `आपकी फसल ${cropTitle} में बीमारी ${diseaseTitle} पाई गई है। बीमारी का स्तर ${diagnosis.severity} है। 72 घंटे में फैलने का खतरा ${riskLevel} है। मुख्य उपाय: ${primaryAction}`
-    : `Diagnosis for ${cropTitle}: ${diseaseTitle}. Severity is ${diagnosis.severity}. 72-hour spread risk is ${riskLevel}. Immediate advice: ${primaryAction}`;
+  // Construct TTS read string (synthesizes gemini.farmer_explanation or advisory summary)
+  const speechText = diagnosis.gemini?.farmer_explanation
+    ? (currentLang === 'hi'
+        ? `फसल ${cropTitle}। एआई रिपोर्ट: ${diagnosis.gemini.farmer_explanation}। मुख्य सलाह: ${primaryAction}`
+        : `Crop ${cropTitle}. AI Report: ${diagnosis.gemini.farmer_explanation} Immediate advice: ${primaryAction}`)
+    : (currentLang === 'hi'
+        ? `आपकी फसल ${cropTitle} में बीमारी ${diseaseTitle} पाई गई है। बीमारी का स्तर ${diagnosis.severity} है। 72 घंटे में फैलने का खतरा ${riskLevel} है। मुख्य उपाय: ${primaryAction}`
+        : `Diagnosis for ${cropTitle}: ${diseaseTitle}. Severity is ${diagnosis.severity}. 72-hour spread risk is ${riskLevel}. Immediate advice: ${primaryAction}`);
 
   const handleEscalateSubmit = async () => {
     setIsSubmittingEscalation(true);
@@ -143,6 +148,14 @@ export default function Result({ diagnosis, selectedCrop, uploadedImage, current
         weatherRisk={diagnosis.weatherRisk} 
         currentLang={currentLang} 
       />
+
+      {/* Multimodal Second Opinion: Gemini 2.5 Flash-Lite */}
+      {diagnosis.gemini && (
+        <GeminiOpinionCard 
+          gemini={diagnosis.gemini} 
+          currentLang={currentLang} 
+        />
+      )}
 
       {/* 5. Advisory Accordion Component */}
       <AdvisoryAccordion 

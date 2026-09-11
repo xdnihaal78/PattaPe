@@ -72,6 +72,22 @@ export const MOCK_PREDICTION_RESPONSE = {
     source: "TNAU Agritech Portal — Crop Protection"
   },
 
+  gemini: {
+    gemini_assessment: "bacterial_leaf_blight",
+    agreement: true,
+    assessment_confidence: "high",
+    visual_evidence: [
+      "Water-soaked lesions with wavy margins along leaf margins",
+      "Yellow to straw-colored stripes progressing down the blade"
+    ],
+    possible_causes: [
+      "Xanthomonas oryzae pv. oryzae infection",
+      "Waterlogging combined with high nitrogen levels"
+    ],
+    farmer_explanation: "Your rice crop shows clear signs of Bacterial Leaf Blight. The bacteria enter through natural openings or wounds, especially during warm, humid, and rainy weather. It causes leaves to dry from the tips down.",
+    disagreement_reason: null
+  },
+
   escalate: true,
 
   escalate_reason: "severity_moderate_and_risk_high",

@@ -179,3 +179,15 @@ export function getSeverityStyle(severity) {
       };
   }
 }
+
+/**
+ * Human-readable formatter for disease keys like "bacterial_leaf_blight" or "rice__bacterial_leaf_blight"
+ */
+export function formatDiseaseName(rawKey) {
+  if (!rawKey) return 'Unknown Condition';
+  const cleanKey = rawKey.includes('__') ? rawKey.split('__')[1] : rawKey;
+  return cleanKey
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+}
