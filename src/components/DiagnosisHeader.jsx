@@ -1,18 +1,19 @@
-import React from 'react';
 import { ShieldCheck, AlertTriangle } from 'lucide-react';
-import { getSeverityStyle } from '../utils/helpers';
+import { getSeverityStyle, TRANSLATIONS } from '../utils/helpers';
 
 /**
  * DiagnosisHeader Component
  * Display:
- * - Selected crop
- * - Predicted disease name
+ * - Selected crop (via crop_label_i18n)
+ * - Predicted disease name (via disease_label_i18n)
  * - Confidence percentage
  * - Severity badge (trace, mild, moderate, severe)
- * Perfectly sized and well-proportioned.
+ * Perfectly sized and well-proportioned across Indian languages.
  */
 export default function DiagnosisHeader({ diagnosis, selectedCrop, currentLang = 'en' }) {
   if (!diagnosis) return null;
+
+  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.en;
 
   // Extract crop name from prediction response (with fallback to selectedCrop)
   const cropName = diagnosis.crop_label_i18n?.[currentLang]
@@ -34,8 +35,8 @@ export default function DiagnosisHeader({ diagnosis, selectedCrop, currentLang =
     ? (diagnosis.confidence <= 1 ? Math.round(diagnosis.confidence * 100) : Math.round(diagnosis.confidence))
     : 90;
 
-  // Severity style mapping (trace, mild, moderate, severe)
-  const severityStyle = getSeverityStyle(diagnosis.severity);
+  // Severity style mapping (trace, mild, moderate, severe) with language support
+  const severityStyle = getSeverityStyle(diagnosis.severity, currentLang);
 
   return (
     <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-sm space-y-3">
@@ -57,7 +58,7 @@ export default function DiagnosisHeader({ diagnosis, selectedCrop, currentLang =
       {/* Disease Name Main Heading */}
       <div>
         <span className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider block">
-          Diagnosed Plant Condition
+          {t.cropCondition || 'Diagnosed Plant Condition'}
         </span>
         <h1 className="text-xl sm:text-2xl font-black text-slate-900 m-0 leading-tight mt-0.5">
           {diseaseName}
@@ -77,16 +78,18 @@ export default function DiagnosisHeader({ diagnosis, selectedCrop, currentLang =
           <div className="p-1.5 bg-white/20 rounded-lg shrink-0">
             <AlertTriangle className="w-4 h-4 text-white stroke-[2.5]" />
           </div>
-          <div>
-            <span className="text-[9px] font-bold uppercase tracking-wider block opacity-90 leading-none">
-              Severity
+          <div className="min-w-0">
+            <span className="text-[9px] font-bold uppercase tracking-wider block opacity-90 leading-none truncate">
+              {t.severity || 'Severity'}
             </span>
-            <span className="text-sm sm:text-base font-black leading-tight block mt-0.5">
+            <span className="text-sm sm:text-base font-black leading-tight block mt-0.5 truncate">
               {severityStyle.label}
             </span>
-            <span className="text-[10px] font-semibold block opacity-90 leading-none mt-0.5">
-              ({severityStyle.localLabel})
-            </span>
+            {currentLang === 'en' && severityStyle.localLabel && (
+              <span className="text-[10px] font-semibold block opacity-90 leading-none mt-0.5">
+                ({severityStyle.localLabel})
+              </span>
+            )}
           </div>
         </div>
 
@@ -95,15 +98,15 @@ export default function DiagnosisHeader({ diagnosis, selectedCrop, currentLang =
           <div className="p-1.5 bg-emerald-200/80 rounded-lg shrink-0">
             <ShieldCheck className="w-4 h-4 text-emerald-800 stroke-[2.5]" />
           </div>
-          <div>
-            <span className="text-[9px] font-bold uppercase tracking-wider block text-emerald-800 leading-none">
-              AI Confidence
+          <div className="min-w-0">
+            <span className="text-[9px] font-bold uppercase tracking-wider block text-emerald-800 leading-none truncate">
+              {t.confidenceLabel || 'AI Confidence'}
             </span>
             <span className="text-sm sm:text-base font-black leading-tight block font-mono mt-0.5">
               {confidencePct}%
             </span>
-            <span className="text-[10px] font-bold text-emerald-700 block leading-none mt-0.5">
-              High Accuracy
+            <span className="text-[10px] font-bold text-emerald-700 block leading-none mt-0.5 truncate">
+              {currentLang === 'hi' ? 'उच्च सटीकता' : currentLang === 'ta' ? 'உயர் துல்லியம்' : currentLang === 'kn' ? 'ಹೆಚ್ಚಿನ ನಿಖರತೆ' : 'High Accuracy'}
             </span>
           </div>
         </div>

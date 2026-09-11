@@ -11,6 +11,7 @@ import Result from './pages/Result';
 import OfficerHeader from './components/officer/OfficerHeader';
 import OfficerDashboard from './pages/OfficerDashboard';
 import OfficerCaseDetail from './pages/OfficerCaseDetail';
+import { getStoredLanguage, setStoredLanguage } from './utils/helpers';
 
 function AppContent() {
   const location = useLocation();
@@ -27,7 +28,12 @@ function AppContent() {
 
   const [uploadedImage, setUploadedImage] = useState(null);
   const [diagnosis, setDiagnosis] = useState(null);
-  const [currentLang, setCurrentLang] = useState('en');
+  const [currentLang, setCurrentLangState] = useState(() => getStoredLanguage());
+
+  const handleLanguageChange = (langCode) => {
+    setCurrentLangState(langCode);
+    setStoredLanguage(langCode);
+  };
 
   const handleSelectCrop = (crop) => {
     setSelectedCropState(crop);
@@ -52,7 +58,7 @@ function AppContent() {
         <Header
           selectedCrop={selectedCrop}
           currentLang={currentLang}
-          onLanguageChange={setCurrentLang}
+          onLanguageChange={handleLanguageChange}
         />
       )}
 

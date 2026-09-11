@@ -7,15 +7,17 @@ export const MOCK_PREDICTION_RESPONSE = {
   crop_label_i18n: {
     en: "Rice",
     hi: "धान",
-    ta: "நெல்"
+    ta: "நெல்",
+    kn: "ಭತ್ತ"
   },
 
   disease: "bacterial_leaf_blight",
 
   disease_label_i18n: {
     en: "Bacterial Leaf Blight",
-    hi: "Bacterial Leaf Blight",
-    ta: "Bacterial Leaf Blight"
+    hi: "जीवाणु पत्ती झुलसा",
+    ta: "பாக்டீரியா இலைக்கருகல்",
+    kn: "ದುಂಡಾಣು ಎಲೆ ಕವಚ ರೋಗ"
   },
 
   confidence: 0.94,
