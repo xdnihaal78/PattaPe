@@ -92,3 +92,13 @@ coverage.xml
 # -------------------------
 *.bak
 *.tmp
+
+# -------------------------
+# Internal Planning & Context Docs
+# -------------------------
+CONTEXT_FOR_CHATGPT.md
+context_for_chatgpt*
+BACKEND_INTEGRATION.md
+backend_integration*
+SIH26131_battle_plan.md
+*battle_plan.md
