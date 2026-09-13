@@ -151,44 +151,46 @@ export default function Analyzing({ selectedCrop, uploadedImage, onDiagnosisComp
           onGoBack={() => navigate('/upload')}
         />
 
-        {/* Demo-Friendly Mode Switcher */}
-        <div className="max-w-xs mx-auto text-center pt-2">
-          <p className="text-[11px] font-bold text-slate-400 mb-1.5 uppercase tracking-wider">
-            Demo Error Switcher
-          </p>
-          <div className="flex justify-center gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                setSimulatedMode(null);
-                runAnalysis();
-              }}
-              className="px-2.5 py-1 text-xs font-bold bg-slate-200 text-slate-800 rounded-lg hover:bg-slate-300 transition"
-            >
-              Normal Analysis
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setSimulatedMode('api_failed');
-                runAnalysis();
-              }}
-              className="px-2.5 py-1 text-xs font-bold bg-red-100 text-red-800 rounded-lg hover:bg-red-200 transition"
-            >
-              API Error
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setSimulatedMode('timeout');
-                runAnalysis();
-              }}
-              className="px-2.5 py-1 text-xs font-bold bg-amber-100 text-amber-800 rounded-lg hover:bg-amber-200 transition"
-            >
-              Timeout
-            </button>
+        {/* Demo-Friendly Mode Switcher (DEV only) */}
+        {import.meta.env.DEV && (
+          <div className="max-w-xs mx-auto text-center pt-2">
+            <p className="text-[11px] font-bold text-slate-400 mb-1.5 uppercase tracking-wider">
+              Demo Error Switcher
+            </p>
+            <div className="flex justify-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setSimulatedMode(null);
+                  runAnalysis();
+                }}
+                className="px-2.5 py-1 text-xs font-bold bg-slate-200 text-slate-800 rounded-lg hover:bg-slate-300 transition"
+              >
+                Normal Analysis
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSimulatedMode('api_failed');
+                  runAnalysis();
+                }}
+                className="px-2.5 py-1 text-xs font-bold bg-red-100 text-red-800 rounded-lg hover:bg-red-200 transition"
+              >
+                API Error
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSimulatedMode('timeout');
+                  runAnalysis();
+                }}
+                className="px-2.5 py-1 text-xs font-bold bg-amber-100 text-amber-800 rounded-lg hover:bg-amber-200 transition"
+              >
+                Timeout
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     );
   }
@@ -205,31 +207,33 @@ export default function Analyzing({ selectedCrop, uploadedImage, onDiagnosisComp
         isFinished={isFinished}
       />
 
-      {/* Discreet Demo Error Testing Bar */}
-      <div className="flex justify-center items-center gap-2 pt-4 opacity-50 hover:opacity-100 transition">
-        <span className="text-[10px] font-bold text-slate-400">Demo test:</span>
-        <button
-          type="button"
-          onClick={() => {
-            clearAllTimeouts();
-            setErrorType('api_failed');
-          }}
-          className="text-[10px] font-bold text-red-600 hover:underline"
-        >
-          [Simulate API Error]
-        </button>
-        <span className="text-slate-300">•</span>
-        <button
-          type="button"
-          onClick={() => {
-            clearAllTimeouts();
-            setErrorType('timeout');
-          }}
-          className="text-[10px] font-bold text-amber-600 hover:underline"
-        >
-          [Simulate Timeout]
-        </button>
-      </div>
+      {/* Discreet Demo Error Testing Bar (DEV only) */}
+      {import.meta.env.DEV && (
+        <div className="flex justify-center items-center gap-2 pt-4 opacity-50 hover:opacity-100 transition">
+          <span className="text-[10px] font-bold text-slate-400">Demo test:</span>
+          <button
+            type="button"
+            onClick={() => {
+              clearAllTimeouts();
+              setErrorType('api_failed');
+            }}
+            className="text-[10px] font-bold text-red-600 hover:underline"
+          >
+            [Simulate API Error]
+          </button>
+          <span className="text-slate-300">•</span>
+          <button
+            type="button"
+            onClick={() => {
+              clearAllTimeouts();
+              setErrorType('timeout');
+            }}
+            className="text-[10px] font-bold text-amber-600 hover:underline"
+          >
+            [Simulate Timeout]
+          </button>
+        </div>
+      )}
     </div>
   );
 }

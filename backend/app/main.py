@@ -23,7 +23,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.schemas import ErrorResponse, HealthResponse, PredictResponse, VALID_CROPS
 from app.services import predict_service
-from app.services.model_service import DEFAULT_MOCK_MODEL
+from app.services.model_service import DEFAULT_MOCK_MODEL, warmup_model
 
 # Configure logging
 logging.basicConfig(
@@ -56,6 +56,13 @@ STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
 HEATMAPS_DIR = STATIC_DIR / "heatmaps"
 HEATMAPS_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+ 
+ 
+@app.on_event("startup")
+async def startup_event():
+    """Warm up ML model in memory at server start to eliminate cold-start lag."""
+    logger.info("Server starting up. Pre-warming ML model...")
+    warmup_model()
 
 # Allowed image MIME types, extensions, and formats
 ALLOWED_MIME_TYPES = {

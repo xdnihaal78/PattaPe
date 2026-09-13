@@ -120,7 +120,7 @@ def main():
     # Model
     # --------------------------------------------------------
 
-    model = create_model(len(train_dataset.classes))
+    model = create_model(len(train_dataset.classes), pretrained=True)
     model = model.to(DEVICE)
 
     criterion = nn.CrossEntropyLoss()

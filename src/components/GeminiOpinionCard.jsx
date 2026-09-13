@@ -38,41 +38,10 @@ export default function GeminiOpinionCard({ gemini, currentLang = 'en' }) {
     kn: 'ನಿಮ್ಮ ಭತ್ತದ ಬೆಳೆಯಲ್ಲಿ ದುಂಡಾಣು ಎಲೆ ಕವಚ ರೋಗದ (Bacterial Leaf Blight) ಸ್ಪಷ್ಟ ಲಕ್ಷಣಗಳು ಕಂಡುಬರುತ್ತಿವೆ. ಬೆಚ್ಚಗಿನ, ತೇವಾಂಶವುಳ್ಳ ಮತ್ತು ಮಳೆಯ ವಾತಾವರಣದಲ್ಲಿ ಎಲೆಗಳ ಅಂಚುಗಳ ಮೂಲಕ ಬ್ಯಾಕ್ಟೀರಿಯಾ ಪ್ರವೇಶಿಸಿ ಎಲೆಗಳನ್ನು ಒಣಗಿಸುತ್ತದೆ.'
   };
 
-  const displayExplanation = localizedExplanations[currentLang] || farmer_explanation;
-
-  const localizedEvidence = {
-    hi: [
-      'पत्ती के किनारों पर लहरदार पानी जैसे भीगे हुए घाव',
-      'पत्ती के निचले हिस्से तक पीली और भूसे के रंग की धारियां'
-    ],
-    ta: [
-      'இலை விளிம்புகளில் அலை போன்ற ஈரமான புண்கள்',
-      'இலையின் கீழ்நோக்கி பரவும் மஞ்சள் மற்றும் வைக்கோல் நிற கோடுகள்'
-    ],
-    kn: [
-      'ಎಲೆಯ ಅಂಚುಗಳಲ್ಲಿ ನೀರಿನಂತಹ ತೇವಯುಕ್ತ ಗಾಯಗಳು',
-      'ಎಲೆಯ ಕೆಳಭಾಗಕ್ಕೆ ಹರಡುವ ಹಳದಿ ಮತ್ತು ಹುಲ್ಲಿನ ಬಣ್ಣದ ಗೆರೆಗಳು'
-    ]
-  };
-
-  const displayEvidence = localizedEvidence[currentLang] || visual_evidence;
-
-  const localizedCauses = {
-    hi: [
-      'जैंथोमोनस ओराइजी (Xanthomonas oryzae) जीवाणु का संक्रमण',
-      'जलजमाव और अत्यधिक नाइट्रोजन खाद का प्रयोग'
-    ],
-    ta: [
-      'சாந்தோமோனாஸ் ஒரைசே (Xanthomonas oryzae) பாக்டீரியா தொற்று',
-      'வயலில் அதிக நீர் தேங்குதல் மற்றும் அதிகப்படியான தழைச்சத்து (நைட்ரஜன்)'
-    ],
-    kn: [
-      'ಕ್ಸಾಂಥೋಮೊನಾಸ್ ಒರೈಜೆ (Xanthomonas oryzae) ಬ್ಯಾಕ್ಟೀರಿಯಾ ಸೋಂಕು',
-      'ಹೊಲದಲ್ಲಿ ನೀರು ನಿಲ್ಲುವುದು ಮತ್ತು ಅತಿಯಾದ ಸಾರಜನಕ ಗೊಬ್ಬರದ ಬಳಕೆ'
-    ]
-  };
-
-  const displayCauses = localizedCauses[currentLang] || possible_causes;
+  const isBLB = gemini_assessment === 'bacterial_leaf_blight';
+  const displayExplanation = (isBLB && localizedExplanations[currentLang]) ? localizedExplanations[currentLang] : farmer_explanation;
+  const displayEvidence = (isBLB && localizedEvidence[currentLang]) ? localizedEvidence[currentLang] : visual_evidence;
+  const displayCauses = (isBLB && localizedCauses[currentLang]) ? localizedCauses[currentLang] : possible_causes;
 
   const agreementLabel = agreement
     ? (t.confirmsDiagnosis || 'Confirms Diagnosis')

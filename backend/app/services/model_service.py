@@ -186,6 +186,52 @@ async def _mock_inference(
     )
 
 
+# Cached ML model objects for in-memory re-use across requests
+_cached_model = None
+_cached_class_names = None
+_cached_device = None
+
+
+def get_or_load_real_model():
+    """Load model once into memory and cache for subsequent requests."""
+    global _cached_model, _cached_class_names, _cached_device
+    if _cached_model is not None and _cached_class_names is not None:
+        return _cached_model, _cached_class_names, _cached_device
+
+    repo_root = Path(__file__).resolve().parent.parent.parent.parent
+    checkpoint_path = repo_root / "ml" / "checkpoints" / "best.pt"
+    classes_path = repo_root / "ml" / "classes.json"
+
+    if not checkpoint_path.exists():
+        raise FileNotFoundError(f"Model checkpoint not found at: {checkpoint_path}")
+
+    if str(repo_root) not in sys.path:
+        sys.path.insert(0, str(repo_root))
+
+    from ml.predict import get_device, load_model
+
+    device = get_device()
+    model, class_names = load_model(
+        checkpoint_path=checkpoint_path,
+        classes_path=classes_path,
+        device=device,
+    )
+    _cached_model = model
+    _cached_class_names = class_names
+    _cached_device = device
+    logger.info("Real ML model cached in memory successfully (%d classes)", len(class_names))
+    return _cached_model, _cached_class_names, _cached_device
+
+
+def warmup_model():
+    """Explicitly pre-load the ML model to eliminate cold-start latency."""
+    if not DEFAULT_MOCK_MODEL:
+        try:
+            get_or_load_real_model()
+        except Exception as err:
+            logger.warning("Failed to warm up ML model: %s", err)
+
+
 def _real_inference_sync(
     image_bytes: bytes,
     crop: Optional[str] = None,
@@ -193,14 +239,12 @@ def _real_inference_sync(
     """
     Real ML inference integration (EfficientNet-B0 + Grad-CAM).
     Uses ml.infer.run_ml_pipeline — the single handoff interface per ML_HANDOFF.md.
+    Uses cached in-memory model to avoid reloading weights from disk.
     """
     try:
         repo_root = Path(__file__).resolve().parent.parent.parent.parent
         checkpoint_path = repo_root / "ml" / "checkpoints" / "best.pt"
         classes_path = repo_root / "ml" / "classes.json"
-
-        if not checkpoint_path.exists():
-            raise FileNotFoundError(f"Model checkpoint not found at: {checkpoint_path}")
 
         # Ensure repo root is on path for ml.* imports
         if str(repo_root) not in sys.path:
@@ -216,12 +260,17 @@ def _real_inference_sync(
         heatmap_dir = Path(__file__).resolve().parent.parent.parent / "static" / "heatmaps"
         heatmap_dir.mkdir(parents=True, exist_ok=True)
 
+        model, class_names, device = get_or_load_real_model()
+
         result = run_ml_pipeline(
             image_input=image,
             crop=crop or "rice",
             checkpoint_path=checkpoint_path,
             classes_path=classes_path,
             heatmap_dir=heatmap_dir,
+            model=model,
+            class_names=class_names,
+            device=device,
         )
 
         # Convert heatmap_path (filesystem) to heatmap_url (static URL)
