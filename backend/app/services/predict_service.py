@@ -15,6 +15,9 @@ Coordinates:
 
 from datetime import datetime, timedelta, timezone
 import logging
+import os
+from pathlib import Path
+import sys
 from typing import Any, Dict, List, Optional
 import uuid
 
@@ -269,10 +272,15 @@ def evaluate_escalation(
     severity: str,
     risk_level: str,
     confidence: float,
+    gemini_data: Optional[Dict] = None,
 ) -> tuple[bool, Optional[str]]:
     """
-    Evaluate deterministic escalation rule:
-    escalate = (severity in ["moderate", "severe"]) or (risk_72h.level == "high") or (confidence < 0.70)
+    Evaluate deterministic escalation rule per CONTRACT.md Section 4:
+    escalate = (severity in ["moderate", "severe"])
+            OR (risk_72h.level == "high")
+            OR (confidence < 0.70)
+            OR (gemini != null AND gemini.agreement == false
+                AND gemini.assessment_confidence IN ["high", "medium"])
     """
     reasons = []
 
@@ -286,8 +294,15 @@ def evaluate_escalation(
     elif risk_level == "high":
         reasons.append("risk_high")
 
+    # Gemini disagreement escalation per CONTRACT.md
+    if (
+        gemini_data is not None
+        and gemini_data.get("agreement") is False
+        and gemini_data.get("assessment_confidence") in ("high", "medium")
+    ):
+        reasons.append("model_and_gemini_disagreement")
+
     if reasons:
-        # Join reasons or choose most critical
         return True, "_and_".join(reasons)
     return False, None
 
@@ -401,7 +416,37 @@ async def predict(
     except Exception:
         advisory = get_advisory(pred_result.disease)
 
-    # 6. Escalation Rule
+    # 6. Gemini Second Opinion (must run BEFORE escalation per CONTRACT.md)
+    gemini_data = None
+    try:
+        gemini_key = os.getenv("GEMINI_API_KEY")
+        if gemini_key:
+            import asyncio
+            from ml.gemini_explainer import analyze_with_gemini
+            from PIL import Image
+            import io
+
+            pil_img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+            ml_summary = {
+                "crop": norm_crop,
+                "disease": pred_result.disease,
+                "confidence": pred_result.confidence,
+                "top_predictions": pred_result.top3,
+            }
+            gemini_raw = await asyncio.to_thread(
+                analyze_with_gemini,
+                image_input=pil_img,
+                ml_result=ml_summary,
+                affected_pct=pred_result.affected_pct,
+                api_key=gemini_key,
+            )
+            if gemini_raw and isinstance(gemini_raw, dict) and "gemini_assessment" in gemini_raw:
+                gemini_data = gemini_raw
+    except Exception as gemini_err:
+        logger.warning("Gemini second opinion generation skipped: %s", gemini_err)
+        gemini_data = None
+
+    # 7. Escalation Rule (uses severity, risk, confidence, AND gemini agreement)
     try:
         from app.services.escalation_engine import should_escalate
         escalate, escalate_reason = should_escalate(
@@ -414,9 +459,10 @@ async def predict(
             severity=severity,
             risk_level=risk_72h.level,
             confidence=pred_result.confidence,
+            gemini_data=gemini_data,
         )
 
-    # 7. Metadata Generation
+    # 8. Metadata Generation
     case_id = f"CASE-{uuid.uuid4().hex[:4].upper()}"
     timestamp = datetime.now(IST).isoformat()
 
@@ -424,14 +470,6 @@ async def predict(
         Top3Prediction(disease=item["disease"], confidence=float(item["confidence"]))
         for item in pred_result.top3
     ]
-
-    # Check if Gemini engine or service exists
-    gemini_data = None
-    try:
-        from app.services.gemini_engine import explain_case
-        gemini_data = await explain_case(crop=norm_crop, disease=pred_result.disease)
-    except Exception:
-        gemini_data = None
 
     response = PredictResponse(
         crop=norm_crop,

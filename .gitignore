@@ -1,54 +1,94 @@
+# =====================================================================
+# PattaPe .gitignore
+# =====================================================================
+
+# -------------------------
 # Logs
-logs
+# -------------------------
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-lerna-debug.log*
 
+# -------------------------
 # Node / Frontend
-node_modules
-dist
-dist-ssr
+# -------------------------
+node_modules/
+dist/
+dist-ssr/
 *.local
+.vite/
 
-# Editor directories and files
+# -------------------------
+# Python
+# -------------------------
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+.venv/
+venv/
+env/
+*.egg-info/
+.eggs/
+build/
+*.dist-info/
+
+# -------------------------
+# ML - Datasets (large, not versioned)
+# -------------------------
+ml/raw_data/
+ml/data/
+
+# -------------------------
+# ML - Generated outputs (reproducible on run)
+# -------------------------
+ml/checkpoints/
+ml/runs/
+ml/outputs/
+ml/heatmaps/
+backend/static/heatmaps/
+
+# -------------------------
+# Environment / secrets
+# -------------------------
+.env
+backend/.env
+!.env.example
+!backend/.env.example
+
+# -------------------------
+# Editor directories
+# -------------------------
 .vscode/*
 !.vscode/extensions.json
-.idea
-.DS_Store
+.idea/
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
 
-# Python
-__pycache__/
-*.py[cod]
-.venv/
-venv/
-
-# ML datasets and generated data
-ml/raw_data/
-ml/data/
-
-# ML outputs
-ml/checkpoints/
-ml/runs/
-ml/outputs/
-ml/heatmaps/
-
-# Environment / local files
-.env
-!.env.example
-
-# Node.js
-node_modules/
-dist/
-.env.local
-
-# OS
+# -------------------------
+# OS artifacts
+# -------------------------
 .DS_Store
 Thumbs.db
+desktop.ini
+
+# -------------------------
+# Pytest / test cache
+# -------------------------
+.pytest_cache/
+htmlcov/
+.coverage
+coverage.xml
+
+# -------------------------
+# Misc
+# -------------------------
+*.bak
+*.tmp

@@ -53,15 +53,46 @@ export default function Analyzing({ selectedCrop, uploadedImage, onDiagnosisComp
 
     const cropId = resolvedCrop?.id || 'rice';
 
-    // 1. Invoke Prediction API (supporting timeout & simulated error modes)
-    const apiPromise = analyzeCropImage(cropId, resolvedImage, {
-      simulate: simulatedMode || undefined,
-      timeoutMs: 8000
-    });
+    // 1. Progress step timers (advance to step 4 while waiting for API)
+    const t1 = setTimeout(() => {
+      setActiveStep(1);
+      setProgress(38);
+    }, 400);
 
-    apiPromise
+    const t2 = setTimeout(() => {
+      setActiveStep(2);
+      setProgress(60);
+    }, 800);
+
+    const t3 = setTimeout(() => {
+      setActiveStep(3);
+      setProgress(78);
+    }, 1200);
+
+    const t4 = setTimeout(() => {
+      setActiveStep(4);
+      setProgress(92);
+    }, 1600);
+
+    timeoutsRef.current = [t1, t2, t3, t4];
+
+    // 2. Invoke Prediction API (waits for real ML inference up to 30s)
+    analyzeCropImage(cropId, resolvedImage, {
+      simulate: simulatedMode || undefined,
+    })
       .then((res) => {
         diagnosisRef.current = res.data;
+        setActiveStep(5);
+        setProgress(100);
+        setIsFinished(true);
+
+        const finalData = res.data || MOCK_PREDICTION_RESPONSE;
+        onDiagnosisComplete?.(finalData);
+
+        const navTimer = setTimeout(() => {
+          navigate('/result');
+        }, 500);
+        timeoutsRef.current.push(navTimer);
       })
       .catch((err) => {
         console.warn('Plant analysis caught error:', err);
@@ -72,42 +103,6 @@ export default function Analyzing({ selectedCrop, uploadedImage, onDiagnosisComp
           setErrorType('api_failed');
         }
       });
-
-    // 2. Animate 5 steps progressively
-    const t1 = setTimeout(() => {
-      setActiveStep(1);
-      setProgress(38);
-    }, 420);
-
-    const t2 = setTimeout(() => {
-      setActiveStep(2);
-      setProgress(60);
-    }, 840);
-
-    const t3 = setTimeout(() => {
-      setActiveStep(3);
-      setProgress(78);
-    }, 1260);
-
-    const t4 = setTimeout(() => {
-      setActiveStep(4);
-      setProgress(92);
-    }, 1680);
-
-    const t5 = setTimeout(() => {
-      setActiveStep(5);
-      setProgress(100);
-      setIsFinished(true);
-
-      const finalData = diagnosisRef.current || MOCK_PREDICTION_RESPONSE;
-      onDiagnosisComplete?.(finalData);
-    }, 2100);
-
-    const t6 = setTimeout(() => {
-      navigate('/result');
-    }, 2450);
-
-    timeoutsRef.current = [t1, t2, t3, t4, t5, t6];
   }, [resolvedCrop, resolvedImage, simulatedMode, navigate, onDiagnosisComplete]);
 
   useEffect(() => {

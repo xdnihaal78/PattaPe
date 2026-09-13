@@ -20,9 +20,14 @@ export default function LeafHeatmap({ uploadedImage, heatmapUrl, currentLang = '
   const fallbackImage = 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=800&q=80';
   const displayImage = uploadedImage || fallbackImage;
 
-  // Has a valid heatmap url
-  const isHeatmapUnavailable = !heatmapUrl || heatmapImageError;
-  const hasHeatmap = Boolean(heatmapUrl && !heatmapImageError);
+  // Has a valid heatmap url (resolve relative /static paths against API_BASE_URL)
+  const apiBase = import.meta.env.VITE_API_BASE_URL ?? '';
+  const resolvedHeatmapUrl = heatmapUrl?.startsWith('http') || heatmapUrl?.startsWith('data:')
+    ? heatmapUrl
+    : heatmapUrl ? `${apiBase}${heatmapUrl}` : null;
+
+  const isHeatmapUnavailable = !resolvedHeatmapUrl || heatmapImageError;
+  const hasHeatmap = Boolean(resolvedHeatmapUrl && !heatmapImageError);
 
   const handleToggleMode = () => {
     setActiveMode((prev) => (prev === 'standard' ? 'heatmap' : 'standard'));
@@ -45,7 +50,7 @@ export default function LeafHeatmap({ uploadedImage, heatmapUrl, currentLang = '
         {hasHeatmap && activeMode === 'heatmap' && (
           <div className="absolute inset-0 z-10 flex items-center justify-center animate-in fade-in duration-300">
             <img 
-              src={heatmapUrl} 
+              src={resolvedHeatmapUrl} 
               alt="AI Disease Heatmap"
               onError={() => setHeatmapImageError(true)}
               className="w-full h-full object-cover mix-blend-screen opacity-90 filter contrast-125"

@@ -29,7 +29,7 @@ logger = logging.getLogger("pattape.model_service")
 
 # Configuration defaults
 DEFAULT_MOCK_MODEL = os.getenv("MOCK_MODEL", "true").lower() in ("true", "1", "yes")
-DEFAULT_MODEL_TIMEOUT = float(os.getenv("MODEL_TIMEOUT_SECONDS", "5.0"))
+DEFAULT_MODEL_TIMEOUT = float(os.getenv("MODEL_TIMEOUT_SECONDS", "30.0"))
 DEFAULT_MOCK_LATENCY = float(os.getenv("MOCK_LATENCY_SECONDS", "1.5"))
 
 # Fallback constants per "controlled failure" principle
@@ -191,11 +191,10 @@ def _real_inference_sync(
     crop: Optional[str] = None,
 ) -> ModelOutput:
     """
-    Phase 4 Real ML inference integration hook (EfficientNet-B0 + Grad-CAM).
-    Invokes M1's trained EfficientNet-B0 and Grad-CAM when weights exist.
+    Real ML inference integration (EfficientNet-B0 + Grad-CAM).
+    Uses ml.infer.run_ml_pipeline — the single handoff interface per ML_HANDOFF.md.
     """
     try:
-        # Check if checkpoint is present at ml/checkpoints/best.pt
         repo_root = Path(__file__).resolve().parent.parent.parent.parent
         checkpoint_path = repo_root / "ml" / "checkpoints" / "best.pt"
         classes_path = repo_root / "ml" / "classes.json"
@@ -203,43 +202,40 @@ def _real_inference_sync(
         if not checkpoint_path.exists():
             raise FileNotFoundError(f"Model checkpoint not found at: {checkpoint_path}")
 
+        # Ensure repo root is on path for ml.* imports
         if str(repo_root) not in sys.path:
             sys.path.insert(0, str(repo_root))
 
-        from ml.predict import predict_image as ml_predict_image
+        from ml.infer import run_ml_pipeline
         import io
         from PIL import Image
 
         image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-        res = ml_predict_image(
-            image,
-            crop=crop,
+
+        # Heatmap directory for static serving
+        heatmap_dir = Path(__file__).resolve().parent.parent.parent / "static" / "heatmaps"
+        heatmap_dir.mkdir(parents=True, exist_ok=True)
+
+        result = run_ml_pipeline(
+            image_input=image,
+            crop=crop or "rice",
             checkpoint_path=checkpoint_path,
-            classes_path=classes_path if classes_path.exists() else None,
+            classes_path=classes_path,
+            heatmap_dir=heatmap_dir,
         )
 
-        # Grad-CAM heatmap generation if available
+        # Convert heatmap_path (filesystem) to heatmap_url (static URL)
         heatmap_url = None
-        affected_pct = 20.0  # default estimate
-        try:
-            from ml.gradcam import generate_heatmap_result
-            cam_res = generate_heatmap_result(image, predicted_class=res["predicted_class"])
-            heatmap_url = cam_res.get("heatmap_url", None)
-            affected_pct = cam_res.get("affected_pct", 20.0)
-        except Exception as cam_err:
-            logger.warning("Grad-CAM generation skipped: %s", cam_err)
-
-        top3 = [
-            {"disease": p["disease"], "confidence": p["confidence"]}
-            for p in res.get("top_predictions", [])[:3]
-        ]
+        if result.get("heatmap_path"):
+            filename = Path(result["heatmap_path"]).name
+            heatmap_url = f"/static/heatmaps/{filename}"
 
         return ModelOutput(
-            crop=res.get("crop", crop or "rice"),
-            disease=res.get("disease", "unknown"),
-            confidence=float(res.get("confidence", 0.0)),
-            top3=top3,
-            affected_pct=float(affected_pct),
+            crop=result.get("crop", crop or "rice"),
+            disease=result.get("disease", "unknown"),
+            confidence=float(result.get("confidence", 0.0)),
+            top3=result.get("top3", []),
+            affected_pct=float(result.get("affected_pct", 0.0)),
             heatmap_url=heatmap_url,
             is_fallback=False,
         )

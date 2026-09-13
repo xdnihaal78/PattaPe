@@ -24,7 +24,11 @@ export default function HeatmapViewer({
   const [isZoomed, setIsZoomed] = useState(false);
 
   const displayOriginal = originalImage || imageUrl || 'https://images.unsplash.com/photo-1536657464919-892534f60d6e?auto=format&fit=crop&w=800&q=80';
-  const displayHeatmap = heatmapUrl || heatmapImage || displayOriginal;
+  const apiBase = import.meta.env.VITE_API_BASE_URL ?? '';
+  const rawHeatmap = heatmapUrl || heatmapImage;
+  const displayHeatmap = rawHeatmap?.startsWith('http') || rawHeatmap?.startsWith('data:')
+    ? rawHeatmap
+    : rawHeatmap ? `${apiBase}${rawHeatmap}` : displayOriginal;
 
   return (
     <div className="bg-white rounded-3xl border-2 border-slate-300 shadow-xl overflow-hidden p-5 space-y-4">
